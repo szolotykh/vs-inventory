@@ -7,6 +7,9 @@ db.json
 *.sqlite-wal
 *.sqlite-shm
 
+# uploaded files
+uploads/
+
 # output
 out
 dist

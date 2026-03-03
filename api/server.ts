@@ -1,10 +1,18 @@
-import { listItems, addItem, editItem, deleteItem, listCategories, addCategory, editCategory, deleteCategory } from "../core/db.ts";
+import {
+  listItems, addItem, editItem, deleteItem,
+  listCategories, addCategory, editCategory, deleteCategory,
+  listImages, addImage, loadImageFile, deleteImage,
+  listMetadata, setMetadata, deleteMetadataKey,
+} from "../core/db.ts";
+import type { Metadata } from "../core/db.ts";
 
 async function handler(req: Request): Promise<Response> {
   const url = new URL(req.url);
   const parts = url.pathname.replace(/^\//, "").split("/");
   const seg0 = parts[0];
   const seg1 = parts[1];
+  const seg2 = parts[2];
+  const seg3 = parts[3];
 
   try {
     // /items
@@ -25,6 +33,68 @@ async function handler(req: Request): Promise<Response> {
       }
 
       const id = seg1;
+
+      // /items/:id/images
+      if (seg2 === "images") {
+        // /items/:id/images/:imageId
+        if (seg3) {
+          if (req.method === "GET") {
+            const images = await listImages(id);
+            const image = images.find((img) => img.id === seg3);
+            if (!image) return new Response("Not Found", { status: 404 });
+            const data = await loadImageFile(seg3);
+            return new Response(data, {
+              headers: { "Content-Type": image.mimeType, "Content-Disposition": `inline; filename="${image.filename}"` },
+            });
+          }
+          if (req.method === "DELETE") {
+            const deleted = await deleteImage(seg3);
+            if (!deleted) return new Response("Not Found", { status: 404 });
+            return new Response(null, { status: 204 });
+          }
+          return new Response("Method Not Allowed", { status: 405 });
+        }
+
+        // /items/:id/images
+        if (req.method === "GET") {
+          return Response.json(await listImages(id));
+        }
+        if (req.method === "POST") {
+          const formData = await req.formData();
+          const file = formData.get("file");
+          if (!(file instanceof File)) return new Response("Missing file field", { status: 400 });
+          if (!file.type.startsWith("image/")) return new Response("File must be an image", { status: 400 });
+          const buffer = Buffer.from(await file.arrayBuffer());
+          const image = await addImage({ itemId: id, filename: file.name, mimeType: file.type }, buffer);
+          return Response.json(image, { status: 201 });
+        }
+        return new Response("Method Not Allowed", { status: 405 });
+      }
+
+      // /items/:id/metadata
+      if (seg2 === "metadata") {
+        // /items/:id/metadata/:key
+        if (seg3) {
+          if (req.method === "DELETE") {
+            const deleted = deleteMetadataKey(id, seg3);
+            if (!deleted) return new Response("Not Found", { status: 404 });
+            return new Response(null, { status: 204 });
+          }
+          return new Response("Method Not Allowed", { status: 405 });
+        }
+
+        // /items/:id/metadata
+        if (req.method === "GET") {
+          return Response.json(listMetadata(id));
+        }
+        if (req.method === "PUT") {
+          const body = await req.json() as Metadata[];
+          const result = setMetadata(id, body);
+          return Response.json(result);
+        }
+        return new Response("Method Not Allowed", { status: 405 });
+      }
+
       if (req.method === "PUT") {
         const body = await req.json() as { name?: string; description?: string; count?: number; categoryId?: string | null };
         if (body.count !== undefined && (!Number.isInteger(body.count) || body.count < 0)) {
