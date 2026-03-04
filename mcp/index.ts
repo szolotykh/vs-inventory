@@ -6,9 +6,10 @@
 import { createServer } from "node:http";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { createMcpServer } from "./server.ts";
+import { config } from "../core/config.ts";
 import type { IncomingMessage } from "node:http";
 
-const port = Number(process.env["MCP_PORT"] ?? 8080);
+const port = config.mcpPort;
 
 /** Active sessions keyed by MCP session ID */
 const sessions = new Map<string, StreamableHTTPServerTransport>();

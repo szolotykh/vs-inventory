@@ -8,21 +8,34 @@ This project uses **Bun** (not Node/npm/yarn) as both runtime and package manage
 
 ```bash
 bun install        # Install dependencies
-bun start          # Start API server on port 3000
-bun test           # Run all tests
+bun start          # Start API server (default port 3000)
+bun cli            # Start interactive CLI
+bun mcp            # Start MCP server (default port 8080)
+bun test           # Run all tests (48 tests across 4 files)
 bun test --filter "creates an item"  # Run a single test by name
 ```
 
 There is no build step — Bun runs TypeScript directly.
 
+## Configuration
+
+All settings are centralized in `core/config.ts` using lazy getters that read from `process.env`. Template env file: `.env.dev`.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `API_PORT` | `3000` | REST API server port |
+| `MCP_PORT` | `8080` | MCP server port |
+| `DB_PATH` | `db.sqlite` | SQLite database file path |
+| `UPLOADS_DIR` | `./uploads` | Image file storage directory |
+
 ## Architecture
 
 Organized into four top-level modules:
 
-- **`core/`** — Shared data layer. `db.ts` uses **bun:sqlite** for SQLite persistence (WAL mode). Exports typed CRUD functions (`listItems`, `addItem`, `editItem`, etc.) and `closeDB()` for cleanup. DB path is configurable via `DB_PATH` env var (defaults to `db.sqlite`).
+- **`core/`** — Shared data layer. `config.ts` centralizes all env-based configuration. `db.ts` uses **bun:sqlite** for SQLite persistence (WAL mode). Exports typed CRUD functions for items, categories, images, and metadata, plus `closeDB()` for cleanup.
 - **`api/`** — HTTP REST API. `server.ts` is a frameworkless router — a single `handler(req)` parses URL segments and dispatches to `core/` CRUD helpers. Exports `createServer()` wrapping `Bun.serve()`.
-- **`mcp/`** — MCP server (future).
-- **`cli/`** — CLI interface (future).
+- **`mcp/`** — MCP server. `server.ts` defines tools with zod-validated params. `index.ts` serves them via Streamable HTTP transport with stateful session management.
+- **`cli/`** — Interactive CLI. `index.ts` runs a REPL with `/command` syntax (e.g., `/items list`, `/metadata set <id> key value`). Supports quoted strings and ID prefix matching.
 
 Entry point: `index.ts` (root) → `api/server.ts` → `core/db.ts` → `db.sqlite`.
 
@@ -30,17 +43,22 @@ SQLite rows use `NULL` for absent `categoryId`; the `rowToItem` helper in `db.ts
 
 ### API Resources
 
-Two resources — **Items** and **Categories** — with a one-to-many relationship (items have an optional `categoryId`). Deleting a category unlinks all its items.
+Four resources:
 
-`count` on Items must be a non-negative integer (validated in `server.ts`).
-
-Setting `categoryId: null` in a PUT explicitly removes the category; `undefined`/omitted leaves it unchanged.
+- **Items** — CRUD with `count` (non-negative integer, validated in `server.ts`). Setting `categoryId: null` in a PUT explicitly removes the category; `undefined`/omitted leaves it unchanged. Deleting an item cascades to its images and metadata.
+- **Categories** — CRUD with one-to-many relationship to items. Deleting a category unlinks all its items.
+- **Images** — Nested under items (`/items/:id/images`). Upload via multipart/form-data, only `image/*` MIME types accepted. Files stored in `UPLOADS_DIR`.
+- **Metadata** — Nested under items (`/items/:id/metadata`). Key/value pairs. PUT replaces all metadata for the item.
 
 ## Testing
 
-Tests are integration tests in `tests/api.test.ts` using `bun:test`. They spin up a real server on a random port (`createServer(0)`) with a temporary `test-db.sqlite` (cleaned up via `closeDB()` + file removal in `afterAll`).
+Tests are split across 4 files in `tests/`:
+- `categories.test.ts` — category CRUD (7 tests)
+- `items.test.ts` — item CRUD, cross-resource, edge cases (22 tests)
+- `images.test.ts` — image upload/download/delete (12 tests)
+- `metadata.test.ts` — metadata CRUD (7 tests)
 
-Test helpers (`get`, `post`, `put`, `del`) wrap `fetch` calls against the live server.
+Shared setup is in `tests/setup.ts`, preloaded via `bunfig.toml`. Each test file runs in its own Bun worker with a temporary `test-db.sqlite` and `test-uploads/` directory, cleaned up in `afterAll`. Test helpers (`get`, `post`, `put`, `del`) wrap `fetch` calls against a live server on a random port (`createServer(0)`).
 
 ## TypeScript Conventions
 

@@ -1,6 +1,7 @@
 import { Database } from "bun:sqlite";
 import { mkdir, rm, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { config } from "./config.ts";
 
 export type Category = { id: string; name: string };
 export type Item = { id: string; name: string; description: string; count: number; categoryId?: string };
@@ -13,12 +14,12 @@ type ItemRow = { id: string; name: string; description: string; count: number; c
 /** Lazily-initialized singleton connection (path from DB_PATH env or "db.sqlite") */
 let _db: Database | null = null;
 
-/** Directory for uploaded image files (configurable via UPLOADS_DIR env) */
-const uploadsDir = process.env["UPLOADS_DIR"] ?? "./uploads";
+/** Directory for uploaded image files */
+const uploadsDir = () => config.uploadsDir;
 
 function getDB(): Database {
   if (_db) return _db;
-  const path = process.env["DB_PATH"] ?? "db.sqlite";
+  const path = config.dbPath;
   _db = new Database(path, { create: true });
   _db.run("PRAGMA journal_mode = WAL");
   _db.run(`CREATE TABLE IF NOT EXISTS categories (id TEXT PRIMARY KEY, name TEXT NOT NULL)`);
@@ -86,7 +87,7 @@ export async function deleteItem(id: string): Promise<boolean> {
   if (result.changes === 0) return false;
   db.run("DELETE FROM images WHERE itemId = ?", [id]);
   db.run("DELETE FROM metadata WHERE itemId = ?", [id]);
-  await Promise.all(images.map((img) => rm(join(uploadsDir, img.id), { force: true })));
+  await Promise.all(images.map((img) => rm(join(uploadsDir(), img.id), { force: true })));
   return true;
 }
 
@@ -136,21 +137,21 @@ export async function addImage(data: { itemId: string; filename: string; mimeTyp
   const id = crypto.randomUUID();
   const size = fileData.length;
   db.run("INSERT INTO images (id, itemId, filename, mimeType, size) VALUES (?, ?, ?, ?, ?)", [id, data.itemId, data.filename, data.mimeType, size]);
-  await mkdir(uploadsDir, { recursive: true });
-  await writeFile(join(uploadsDir, id), fileData);
+  await mkdir(uploadsDir(), { recursive: true });
+  await writeFile(join(uploadsDir(), id), fileData);
   return { id, itemId: data.itemId, filename: data.filename, mimeType: data.mimeType, size };
 }
 
 /** Load image file contents from uploads directory */
 export async function loadImageFile(id: string): Promise<Buffer> {
-  return readFile(join(uploadsDir, id));
+  return readFile(join(uploadsDir(), id));
 }
 
 /** Delete image metadata + file */
 export async function deleteImage(id: string): Promise<boolean> {
   const result = getDB().run("DELETE FROM images WHERE id = ?", [id]);
   if (result.changes === 0) return false;
-  await rm(join(uploadsDir, id), { force: true });
+  await rm(join(uploadsDir(), id), { force: true });
   return true;
 }
 
