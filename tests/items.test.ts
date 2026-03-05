@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from "bun:test";
 import { getBaseUrl, get, post, put, del } from "./setup.ts";
-import type { Category, Item } from "./setup.ts";
+import type { Category, Item, PagedItems } from "./setup.ts";
 
 describe("items", () => {
   let catId = "";
@@ -15,7 +15,11 @@ describe("items", () => {
   it("GET /items returns empty array initially", async () => {
     const res = await get("/items");
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual([]);
+    const body = await res.json() as PagedItems;
+    expect(body.items).toEqual([]);
+    expect(body.total).toBe(0);
+    expect(body.limit).toBeNull();
+    expect(body.offset).toBe(0);
   });
 
   it("POST /items creates an item without a category", async () => {
@@ -58,8 +62,9 @@ describe("items", () => {
 
   it("GET /items returns both items", async () => {
     const res = await get("/items");
-    const body = await res.json() as Item[];
-    expect(body).toHaveLength(2);
+    const body = await res.json() as PagedItems;
+    expect(body.items).toHaveLength(2);
+    expect(body.total).toBe(2);
   });
 
   it("PUT /items/:id updates name and description", async () => {
@@ -114,9 +119,10 @@ describe("items", () => {
 
   it("GET /items returns one item after deletion", async () => {
     const res = await get("/items");
-    const body = await res.json() as Item[];
-    expect(body).toHaveLength(1);
-    expect(body[0]?.id).toBe(itemBId);
+    const body = await res.json() as PagedItems;
+    expect(body.items).toHaveLength(1);
+    expect(body.total).toBe(1);
+    expect(body.items[0]?.id).toBe(itemBId);
   });
 
   it("DELETE /items/:id returns 404 for unknown id", async () => {
@@ -144,7 +150,7 @@ describe("cross-resource: deleting a category unlinks its items", () => {
 
   it("item has categoryId before deletion", async () => {
     const res = await get("/items");
-    const items = await res.json() as Item[];
+    const { items } = await res.json() as PagedItems;
     const item = items.find((i) => i.id === itemId);
     expect(item?.categoryId).toBe(catId);
   });
@@ -154,7 +160,7 @@ describe("cross-resource: deleting a category unlinks its items", () => {
     expect(res.status).toBe(204);
 
     const itemsRes = await get("/items");
-    const items = await itemsRes.json() as Item[];
+    const { items } = await itemsRes.json() as PagedItems;
     const item = items.find((i) => i.id === itemId);
     expect(item?.categoryId).toBeUndefined();
   });
@@ -165,6 +171,127 @@ describe("cross-resource: deleting a category unlinks its items", () => {
     expect(cats.find((c) => c.id === catId)).toBeUndefined();
   });
 });
+
+describe("pagination", () => {
+  let total = 0;
+
+  beforeAll(async () => {
+    // capture count before adding test fixtures
+    const r = await get("/items");
+    total = ((await r.json() as PagedItems).total);
+    for (let i = 1; i <= 5; i++) {
+      await post("/items", { name: `Page Item ${i}`, description: `Desc ${i}`, count: i });
+    }
+    total += 5;
+  });
+
+  it("GET /items returns all items with correct total and null limit", async () => {
+    const res = await get("/items");
+    const body = await res.json() as PagedItems;
+    expect(body.total).toBe(total);
+    expect(body.items).toHaveLength(total);
+    expect(body.limit).toBeNull();
+    expect(body.offset).toBe(0);
+  });
+
+  it("GET /items?limit=2 returns 2 items and correct total", async () => {
+    const res = await get("/items?limit=2");
+    const body = await res.json() as PagedItems;
+    expect(body.total).toBe(total);
+    expect(body.items).toHaveLength(2);
+    expect(body.limit).toBe(2);
+    expect(body.offset).toBe(0);
+  });
+
+  it("GET /items?limit=2&offset=2 returns next 2 items", async () => {
+    const res = await get("/items?limit=2&offset=2");
+    const body = await res.json() as PagedItems;
+    expect(body.total).toBe(total);
+    expect(body.items).toHaveLength(2);
+    expect(body.limit).toBe(2);
+    expect(body.offset).toBe(2);
+  });
+
+  it("GET /items?limit=2&offset=total-1 returns 1 item", async () => {
+    const res = await get(`/items?limit=2&offset=${total - 1}`);
+    const body = await res.json() as PagedItems;
+    expect(body.total).toBe(total);
+    expect(body.items).toHaveLength(1);
+  });
+
+  it("GET /items?offset=N with no limit returns remaining items", async () => {
+    const skip = 3;
+    const res = await get(`/items?offset=${skip}`);
+    const body = await res.json() as PagedItems;
+    expect(body.total).toBe(total);
+    expect(body.items).toHaveLength(total - skip);
+    expect(body.offset).toBe(skip);
+    expect(body.limit).toBeNull();
+  });
+
+  it("GET /items?limit=0 returns 400", async () => {
+    const res = await get("/items?limit=0");
+    expect(res.status).toBe(400);
+  });
+
+  it("GET /items?limit=-1 returns 400", async () => {
+    const res = await get("/items?limit=-1");
+    expect(res.status).toBe(400);
+  });
+
+  it("GET /items?offset=-1 returns 400", async () => {
+    const res = await get("/items?offset=-1");
+    expect(res.status).toBe(400);
+  });
+});
+
+
+describe("category filter", () => {
+  let catAId = "";
+  let catBId = "";
+
+  beforeAll(async () => {
+    catAId = (await (await post("/categories", { name: "Filter Cat A" })).json() as Category).id;
+    catBId = (await (await post("/categories", { name: "Filter Cat B" })).json() as Category).id;
+    await post("/items", { name: "Cat A Item 1", description: "d", count: 1, categoryId: catAId });
+    await post("/items", { name: "Cat A Item 2", description: "d", count: 2, categoryId: catAId });
+    await post("/items", { name: "Cat B Item 1", description: "d", count: 3, categoryId: catBId });
+    await post("/items", { name: "No Cat Item",  description: "d", count: 4 });
+  });
+
+  it("GET /items?categoryId=A returns only items in that category", async () => {
+    const res = await get(`/items?categoryId=${catAId}`);
+    const body = await res.json() as PagedItems;
+    expect(body.total).toBe(2);
+    expect(body.items).toHaveLength(2);
+    expect(body.items.every((i) => i.categoryId === catAId)).toBe(true);
+  });
+
+  it("GET /items?categoryId=B returns only items in that category", async () => {
+    const res = await get(`/items?categoryId=${catBId}`);
+    const body = await res.json() as PagedItems;
+    expect(body.total).toBe(1);
+    expect(body.items).toHaveLength(1);
+    expect(body.items[0]?.categoryId).toBe(catBId);
+  });
+
+  it("GET /items?categoryId=unknown returns empty", async () => {
+    const res = await get("/items?categoryId=nonexistent-id");
+    const body = await res.json() as PagedItems;
+    expect(body.total).toBe(0);
+    expect(body.items).toHaveLength(0);
+  });
+
+  it("GET /items?categoryId=A&limit=1 applies both filter and pagination", async () => {
+    const res = await get(`/items?categoryId=${catAId}&limit=1`);
+    const body = await res.json() as PagedItems;
+    expect(body.total).toBe(2);
+    expect(body.items).toHaveLength(1);
+    expect(body.limit).toBe(1);
+    expect(body.items[0]?.categoryId).toBe(catAId);
+  });
+});
+
 
 describe("edge cases", () => {
   it("malformed JSON body returns 400", async () => {

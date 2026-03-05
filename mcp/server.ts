@@ -5,7 +5,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import {
-  listItems, addItem, editItem, deleteItem,
+  countItems, listItems, getItem, addItem, editItem, deleteItem,
   listCategories, addCategory, editCategory, deleteCategory,
   listImages, addImage, deleteImage,
   listMetadata, setMetadata, deleteMetadataKey,
@@ -16,9 +16,22 @@ export function createMcpServer(): McpServer {
 
   // --- Items ---
 
-  server.tool("list_items", "Storage: list all inventory items with their name, description, count, and optional category. Returns an array of item objects. Use this to browse or search the full inventory.", {}, async () => {
-    const items = await listItems();
-    return { content: [{ type: "text", text: JSON.stringify(items, null, 2) }] };
+  server.tool("list_items", "Storage: list inventory items with optional pagination and category filter. Returns a page object with items array, total count, limit, and offset. Omit limit to retrieve all items.", {
+    limit: z.number().int().min(1).optional().describe("Max items to return"),
+    offset: z.number().int().min(0).optional().describe("Number of items to skip"),
+    categoryId: z.string().optional().describe("Filter to items in this category"),
+  }, async ({ limit, offset, categoryId }) => {
+    const total = countItems({ categoryId });
+    const items = await listItems({ limit, offset, categoryId });
+    return { content: [{ type: "text", text: JSON.stringify({ items, total, limit: limit ?? null, offset: offset ?? 0 }, null, 2) }] };
+  });
+
+  server.tool("get_item", "Storage: get a single inventory item by its ID. Returns the item's name, description, count, and optional category assignment. Returns an error if the item ID does not exist.", {
+    id: z.string().describe("Item ID"),
+  }, ({ id }) => {
+    const item = getItem(id);
+    if (!item) return { content: [{ type: "text", text: "Item not found" }], isError: true };
+    return { content: [{ type: "text", text: JSON.stringify(item, null, 2) }] };
   });
 
   server.tool("create_item", "Storage: create a new inventory item with name, description, count, and optional category assignment. Count must be a non-negative integer. Returns the created item with its generated ID.", {

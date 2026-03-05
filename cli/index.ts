@@ -8,7 +8,7 @@ import { stdin, stdout } from "node:process";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import {
-  listItems, addItem, editItem, deleteItem,
+  countItems, listItems, addItem, editItem, deleteItem,
   listCategories, addCategory, editCategory, deleteCategory,
   listImages, addImage, deleteImage,
   listMetadata, setMetadata, deleteMetadataKey,
@@ -92,7 +92,7 @@ function findById<T extends { id: string }>(list: T[], partial: string): T | und
 
 const HELP = `
 ${c.bold}Commands:${c.reset}
-  ${c.cyan}/items${c.reset} list                                      List all items
+  ${c.cyan}/items${c.reset} list [limit [offset]] [category=<id>]       List items (paginated/filtered)
   ${c.cyan}/items${c.reset} add <name> <description> <count> [categoryId]  Create an item
   ${c.cyan}/items${c.reset} update <id> <field>=<value> ...            Update an item
   ${c.cyan}/items${c.reset} delete <id>                                Delete an item
@@ -128,9 +128,27 @@ ${c.bold}Notes:${c.reset}
 
 async function handleItems(action: string | undefined, rest: string[]) {
   switch (action) {
-    case "list":
-      printItems(await listItems());
+    case "list": {
+      // Extract optional category=<id> flag from anywhere in args
+      const categoryArg = rest.find((a) => a.startsWith("category="));
+      const positional = rest.filter((a) => !a.startsWith("category="));
+      const [limitArg, offsetArg] = positional;
+      const limit = limitArg !== undefined ? parseInt(limitArg, 10) : undefined;
+      const offset = offsetArg !== undefined ? parseInt(offsetArg, 10) : undefined;
+      const categoryId = categoryArg ? categoryArg.slice("category=".length) : undefined;
+      if (limit !== undefined && (!Number.isInteger(limit) || limit < 1)) { err("limit must be a positive integer"); return; }
+      if (offset !== undefined && (!Number.isInteger(offset) || offset < 0)) { err("offset must be a non-negative integer"); return; }
+      const total = countItems({ categoryId });
+      const items = await listItems({ limit, offset, categoryId });
+      printItems(items);
+      if (limit !== undefined) {
+        const resolvedOffset = offset ?? 0;
+        info(`Showing ${items.length} of ${total} items (offset ${resolvedOffset})`);
+      } else {
+        info(`${total} item${total === 1 ? "" : "s"} total`);
+      }
       break;
+    }
 
     case "add": {
       const [name, description, countStr, categoryId] = rest;

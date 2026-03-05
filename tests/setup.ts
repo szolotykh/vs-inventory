@@ -59,5 +59,6 @@ export function del(path: string) {
 
 export type Category = { id: string; name: string };
 export type Item = { id: string; name: string; description: string; count: number; categoryId?: string };
+export type PagedItems = { items: Item[]; total: number; limit: number | null; offset: number };
 export type Image = { id: string; itemId: string; filename: string; mimeType: string; size: number };
 export type Metadata = { key: string; value: string };

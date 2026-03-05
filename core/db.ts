@@ -44,9 +44,35 @@ function rowToItem(row: ItemRow): Item {
 
 // --- Items ---
 
-export async function listItems(): Promise<Item[]> {
+export function countItems(opts?: { categoryId?: string }): number {
+  if (opts?.categoryId !== undefined) {
+    return (getDB().query("SELECT COUNT(*) as n FROM items WHERE categoryId = ?").get(opts.categoryId) as { n: number }).n;
+  }
+  return (getDB().query("SELECT COUNT(*) as n FROM items").get() as { n: number }).n;
+}
+
+export async function listItems(opts?: { limit?: number; offset?: number; categoryId?: string }): Promise<Item[]> {
   const db = getDB();
+  const offset = opts?.offset ?? 0;
+  const where = opts?.categoryId !== undefined ? "WHERE categoryId = ?" : "";
+  const params: (string | number)[] = opts?.categoryId !== undefined ? [opts.categoryId] : [];
+
+  if (opts?.limit !== undefined) {
+    return db.query(`SELECT * FROM items ${where} LIMIT ? OFFSET ?`).all(...params, opts.limit, offset).map((r) => rowToItem(r as ItemRow));
+  }
+  if (offset > 0) {
+    // SQLite requires LIMIT to use OFFSET; -1 means unlimited
+    return db.query(`SELECT * FROM items ${where} LIMIT -1 OFFSET ?`).all(...params, offset).map((r) => rowToItem(r as ItemRow));
+  }
+  if (where) {
+    return db.query(`SELECT * FROM items ${where}`).all(...params).map((r) => rowToItem(r as ItemRow));
+  }
   return db.query("SELECT * FROM items").all().map((r) => rowToItem(r as ItemRow));
+}
+
+export function getItem(id: string): Item | null {
+  const row = getDB().query("SELECT * FROM items WHERE id = ?").get(id) as ItemRow | null;
+  return row ? rowToItem(row) : null;
 }
 
 export async function addItem(data: { name: string; description: string; count: number; categoryId?: string }): Promise<Item> {

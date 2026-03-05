@@ -1,5 +1,5 @@
 import {
-  listItems, addItem, editItem, deleteItem,
+  countItems, listItems, getItem, addItem, editItem, deleteItem,
   listCategories, addCategory, editCategory, deleteCategory,
   listImages, addImage, loadImageFile, deleteImage,
   listMetadata, setMetadata, deleteMetadataKey,
@@ -19,7 +19,20 @@ async function handler(req: Request): Promise<Response> {
     if (seg0 === "items") {
       if (seg1 === undefined || seg1 === "") {
         if (req.method === "GET") {
-          return Response.json(await listItems());
+          const limitParam = url.searchParams.get("limit");
+          const offsetParam = url.searchParams.get("offset");
+          const categoryId = url.searchParams.get("categoryId") ?? undefined;
+          const limit = limitParam !== null ? parseInt(limitParam, 10) : undefined;
+          const offset = offsetParam !== null ? parseInt(offsetParam, 10) : undefined;
+          if (limit !== undefined && (!Number.isInteger(limit) || limit < 1)) {
+            return new Response("limit must be a positive integer", { status: 400 });
+          }
+          if (offset !== undefined && (!Number.isInteger(offset) || offset < 0)) {
+            return new Response("offset must be a non-negative integer", { status: 400 });
+          }
+          const total = countItems({ categoryId });
+          const items = await listItems({ limit, offset, categoryId });
+          return Response.json({ items, total, limit: limit ?? null, offset: offset ?? 0 });
         }
         if (req.method === "POST") {
           const body = await req.json() as { name: string; description: string; count: number; categoryId?: string };
@@ -95,6 +108,11 @@ async function handler(req: Request): Promise<Response> {
         return new Response("Method Not Allowed", { status: 405 });
       }
 
+      if (req.method === "GET") {
+        const item = getItem(id);
+        if (item === null) return new Response("Not Found", { status: 404 });
+        return Response.json(item);
+      }
       if (req.method === "PUT") {
         const body = await req.json() as { name?: string; description?: string; count?: number; categoryId?: string | null };
         if (body.count !== undefined && (!Number.isInteger(body.count) || body.count < 0)) {
