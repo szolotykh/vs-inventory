@@ -44,18 +44,30 @@ function rowToItem(row: ItemRow): Item {
 
 // --- Items ---
 
-export function countItems(opts?: { categoryId?: string }): number {
+function buildItemsWhere(opts?: { categoryId?: string; search?: string }): { where: string; params: (string | number)[] } {
+  const conditions: string[] = [];
+  const params: (string | number)[] = [];
   if (opts?.categoryId !== undefined) {
-    return (getDB().query("SELECT COUNT(*) as n FROM items WHERE categoryId = ?").get(opts.categoryId) as { n: number }).n;
+    conditions.push("categoryId = ?");
+    params.push(opts.categoryId);
   }
-  return (getDB().query("SELECT COUNT(*) as n FROM items").get() as { n: number }).n;
+  if (opts?.search !== undefined) {
+    conditions.push("(name LIKE ? OR description LIKE ?)");
+    const pattern = `%${opts.search}%`;
+    params.push(pattern, pattern);
+  }
+  return { where: conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "", params };
 }
 
-export async function listItems(opts?: { limit?: number; offset?: number; categoryId?: string }): Promise<Item[]> {
+export function countItems(opts?: { categoryId?: string; search?: string }): number {
+  const { where, params } = buildItemsWhere(opts);
+  return (getDB().query(`SELECT COUNT(*) as n FROM items ${where}`).get(...params) as { n: number }).n;
+}
+
+export async function listItems(opts?: { limit?: number; offset?: number; categoryId?: string; search?: string }): Promise<Item[]> {
   const db = getDB();
   const offset = opts?.offset ?? 0;
-  const where = opts?.categoryId !== undefined ? "WHERE categoryId = ?" : "";
-  const params: (string | number)[] = opts?.categoryId !== undefined ? [opts.categoryId] : [];
+  const { where, params } = buildItemsWhere(opts);
 
   if (opts?.limit !== undefined) {
     return db.query(`SELECT * FROM items ${where} LIMIT ? OFFSET ?`).all(...params, opts.limit, offset).map((r) => rowToItem(r as ItemRow));

@@ -16,13 +16,14 @@ export function createMcpServer(): McpServer {
 
   // --- Items ---
 
-  server.tool("list_items", "Storage: list inventory items with optional pagination and category filter. Returns a page object with items array, total count, limit, and offset. Omit limit to retrieve all items.", {
+  server.tool("list_items", "Storage: list inventory items with optional pagination, category filter, and text search. Returns a page object with items array, total count, limit, and offset. Omit limit to retrieve all items.", {
     limit: z.number().int().min(1).optional().describe("Max items to return"),
     offset: z.number().int().min(0).optional().describe("Number of items to skip"),
     categoryId: z.string().optional().describe("Filter to items in this category"),
-  }, async ({ limit, offset, categoryId }) => {
-    const total = countItems({ categoryId });
-    const items = await listItems({ limit, offset, categoryId });
+    search: z.string().optional().describe("Search term matched against name and description (case-insensitive)"),
+  }, async ({ limit, offset, categoryId, search }) => {
+    const total = countItems({ categoryId, search });
+    const items = await listItems({ limit, offset, categoryId, search });
     return { content: [{ type: "text", text: JSON.stringify({ items, total, limit: limit ?? null, offset: offset ?? 0 }, null, 2) }] };
   });
 

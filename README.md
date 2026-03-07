@@ -32,14 +32,15 @@ All settings are centralized in `core/config.ts` and read from environment varia
 
 ### Items
 
-| Method | Path | Body | Response |
+| Method | Path | Body / Query | Response |
 |--------|------|------|----------|
-| GET | `/items` | — | `Item[]` |
+| GET | `/items` | `?search=`, `?categoryId=`, `?limit=`, `?offset=` | `{ items, total, limit, offset }` |
+| GET | `/items/:id` | — | `Item` |
 | POST | `/items` | `{ name, description, count, categoryId? }` | `Item` 201 |
 | PUT | `/items/:id` | `{ name?, description?, count?, categoryId? \| null }` | `Item` |
 | DELETE | `/items/:id` | — | 204 |
 
-Set `categoryId: null` in a PUT to remove an item's category. Deleting an item cascades to its images and metadata.
+`search` matches against name and description (case-insensitive, substring). Set `categoryId: null` in a PUT to remove an item's category. Deleting an item cascades to its images and metadata.
 
 ### Categories
 
@@ -91,30 +92,53 @@ type Metadata = { key: string; value: string };
 The interactive CLI uses slash-commands:
 
 ```
-/items list                              — list all items
-/items add "Name" "Description" [count]  — create an item
-/items edit <id> name "New Name"         — update a field
-/items delete <id>                       — delete an item
-/categories list | add | edit | delete   — manage categories
-/images list <itemId>                    — list images for an item
-/images add <itemId> <filepath>          — upload an image
-/images delete <imageId>                 — delete an image
-/metadata list <itemId>                  — list metadata
-/metadata set <itemId> <key> <value>     — set a key/value pair
-/metadata delete <itemId> <key>          — delete a key
-/help                                    — show available commands
-/exit                                    — quit
+/items list [limit [offset]] [category=<id>]       — list all items (paginated/filtered)
+/items add <name> <description> <count> [catId]    — create an item
+/items update <id> name=X description=X count=N categoryId=X|null — update fields
+/items delete <id>                                 — delete an item
+
+/categories list                                   — list all categories
+/categories add <name>                             — create a category
+/categories update <id> <name>                     — rename a category
+/categories delete <id>                            — delete a category
+
+/images list <itemId>                              — list images for an item
+/images add <itemId> <filepath>                    — upload an image
+/images delete <imageId>                           — delete an image
+
+/metadata list <itemId>                            — list metadata
+/metadata set <itemId> key=value ...               — set key/value pairs (merges with existing)
+/metadata delete <itemId> <key>                    — delete a key
+
+/mcp connect [url]                                 — connect to MCP server
+/mcp disconnect                                    — disconnect
+/mcp tools list                                    — list available MCP tools
+/mcp tools call <name> [key=value ...]             — call an MCP tool
+
+/help                                              — show available commands
+/exit                                              — quit
 ```
+
+IDs can be shortened to a unique prefix (e.g. `a3f8` instead of the full UUID).
 
 ## MCP Server
 
-The MCP server exposes all CRUD operations as tools via Streamable HTTP transport on `/mcp`. Tools: `list_items`, `add_item`, `edit_item`, `delete_item`, `list_categories`, `add_category`, `edit_category`, `delete_category`, `list_images`, `upload_image`, `delete_image`, `list_metadata`, `set_metadata`, `delete_metadata_key`.
+The MCP server exposes all CRUD operations as tools via Streamable HTTP transport on `/mcp`. Tools: `list_items`, `get_item`, `create_item`, `update_item`, `delete_item`, `list_categories`, `create_category`, `update_category`, `delete_category`, `list_images`, `upload_image`, `delete_image`, `list_metadata`, `set_metadata`, `delete_metadata_key`.
 
 ## Examples
 
 ```bash
 # List items
 curl http://localhost:3000/items
+
+# Get a single item by ID
+curl http://localhost:3000/items/<id>
+
+# Search items by name or description
+curl "http://localhost:3000/items?search=milk"
+
+# Search within a category with pagination
+curl "http://localhost:3000/items?search=red&categoryId=<id>&limit=10&offset=0"
 
 # Create a category
 curl -X POST http://localhost:3000/categories \
