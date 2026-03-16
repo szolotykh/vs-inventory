@@ -1,5 +1,5 @@
 import { Database } from "bun:sqlite";
-import { config } from "../config.ts";
+import { config } from "../../config.ts";
 
 let _db: Database | null = null;
 

@@ -13,7 +13,7 @@ import {
   listImages, addImage, deleteImage,
   listMetadata, setMetadata, deleteMetadataKey,
 } from "../core/operations/index.ts";
-import { closeDB } from "../core/data/db.ts";
+import { closeDB } from "../core/data/index.ts";
 import { config } from "../core/config.ts";
 import type { Item, Category, Image, Metadata } from "../core/models/index.ts";
 
