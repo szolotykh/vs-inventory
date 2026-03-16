@@ -6,6 +6,7 @@ import { closeDB } from "../core/data/index.ts";
 // Must be set before any db function is called (getDB() reads it lazily)
 process.env["DB_PATH"] = "./test-db.sqlite";
 process.env["UPLOADS_DIR"] = "./test-uploads";
+process.env["FILE_DB_DIR"] = "./test-data";
 
 let baseUrl = "";
 let server: ReturnType<typeof createServer>;
@@ -29,6 +30,7 @@ afterAll(async () => {
     }
   }
   await rm("./test-uploads", { force: true, recursive: true });
+  await rm("./test-data", { force: true, recursive: true });
 });
 
 // --- Helpers ---

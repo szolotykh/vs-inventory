@@ -246,7 +246,7 @@ describe("pagination", () => {
 });
 
 
-describe("category filter", () => {
+describe("$filter — category equality", () => {
   let catAId = "";
   let catBId = "";
 
@@ -259,36 +259,149 @@ describe("category filter", () => {
     await post("/items", { name: "No Cat Item",  description: "d", count: 4 });
   });
 
-  it("GET /items?categoryId=A returns only items in that category", async () => {
-    const res = await get(`/items?categoryId=${catAId}`);
-    const body = await res.json() as PagedItems;
+  it("categoryId eq 'A' returns only items in that category", async () => {
+    const f = encodeURIComponent(`categoryId eq '${catAId}'`);
+    const body = await (await get(`/items?$filter=${f}`)).json() as PagedItems;
     expect(body.total).toBe(2);
     expect(body.items).toHaveLength(2);
     expect(body.items.every((i) => i.categoryId === catAId)).toBe(true);
   });
 
-  it("GET /items?categoryId=B returns only items in that category", async () => {
-    const res = await get(`/items?categoryId=${catBId}`);
-    const body = await res.json() as PagedItems;
+  it("categoryId eq 'B' returns only items in that category", async () => {
+    const f = encodeURIComponent(`categoryId eq '${catBId}'`);
+    const body = await (await get(`/items?$filter=${f}`)).json() as PagedItems;
     expect(body.total).toBe(1);
     expect(body.items).toHaveLength(1);
     expect(body.items[0]?.categoryId).toBe(catBId);
   });
 
-  it("GET /items?categoryId=unknown returns empty", async () => {
-    const res = await get("/items?categoryId=nonexistent-id");
-    const body = await res.json() as PagedItems;
+  it("categoryId eq 'nonexistent' returns empty", async () => {
+    const f = encodeURIComponent("categoryId eq 'nonexistent-id'");
+    const body = await (await get(`/items?$filter=${f}`)).json() as PagedItems;
     expect(body.total).toBe(0);
     expect(body.items).toHaveLength(0);
   });
 
-  it("GET /items?categoryId=A&limit=1 applies both filter and pagination", async () => {
-    const res = await get(`/items?categoryId=${catAId}&limit=1`);
-    const body = await res.json() as PagedItems;
+  it("categoryId eq 'A' combined with limit applies both", async () => {
+    const f = encodeURIComponent(`categoryId eq '${catAId}'`);
+    const body = await (await get(`/items?$filter=${f}&limit=1`)).json() as PagedItems;
     expect(body.total).toBe(2);
     expect(body.items).toHaveLength(1);
     expect(body.limit).toBe(1);
     expect(body.items[0]?.categoryId).toBe(catAId);
+  });
+
+  it("categoryId eq null returns items with no category", async () => {
+    const f = encodeURIComponent("categoryId eq null");
+    const body = await (await get(`/items?$filter=${f}`)).json() as PagedItems;
+    expect(body.items.every((i) => i.categoryId === undefined)).toBe(true);
+  });
+
+  it("categoryId ne null returns items that have a category", async () => {
+    const f = encodeURIComponent("categoryId ne null");
+    const body = await (await get(`/items?$filter=${f}`)).json() as PagedItems;
+    expect(body.items.every((i) => i.categoryId !== undefined)).toBe(true);
+  });
+});
+
+
+describe("$filter — numeric comparisons", () => {
+  beforeAll(async () => {
+    await post("/items", { name: "Num Item 1", description: "d", count: 10 });
+    await post("/items", { name: "Num Item 2", description: "d", count: 20 });
+    await post("/items", { name: "Num Item 3", description: "d", count: 30 });
+  });
+
+  it("count gt 15 returns items with count > 15", async () => {
+    const f = encodeURIComponent("count gt 15");
+    const body = await (await get(`/items?$filter=${f}`)).json() as PagedItems;
+    expect(body.items.every((i) => i.count > 15)).toBe(true);
+    expect(body.items.some((i) => i.count === 20)).toBe(true);
+    expect(body.items.some((i) => i.count === 30)).toBe(true);
+  });
+
+  it("count lt 20 returns items with count < 20", async () => {
+    const f = encodeURIComponent("count lt 20");
+    const body = await (await get(`/items?$filter=${f}`)).json() as PagedItems;
+    expect(body.items.every((i) => i.count < 20)).toBe(true);
+  });
+
+  it("count ge 20 returns items with count >= 20", async () => {
+    const f = encodeURIComponent("count ge 20");
+    const body = await (await get(`/items?$filter=${f}`)).json() as PagedItems;
+    expect(body.items.every((i) => i.count >= 20)).toBe(true);
+    expect(body.items.some((i) => i.count === 20)).toBe(true);
+  });
+
+  it("count le 20 returns items with count <= 20", async () => {
+    const f = encodeURIComponent("count le 20");
+    const body = await (await get(`/items?$filter=${f}`)).json() as PagedItems;
+    expect(body.items.every((i) => i.count <= 20)).toBe(true);
+    expect(body.items.some((i) => i.count === 20)).toBe(true);
+  });
+
+  it("count eq 30 returns exactly items with count 30", async () => {
+    const f = encodeURIComponent("count eq 30");
+    const body = await (await get(`/items?$filter=${f}`)).json() as PagedItems;
+    expect(body.items.every((i) => i.count === 30)).toBe(true);
+  });
+
+  it("count ne 20 excludes items with count 20", async () => {
+    const f = encodeURIComponent("count ne 20");
+    const body = await (await get(`/items?$filter=${f}`)).json() as PagedItems;
+    expect(body.items.every((i) => i.count !== 20)).toBe(true);
+  });
+});
+
+
+describe("$filter — logical operators", () => {
+  let catId = "";
+
+  beforeAll(async () => {
+    catId = (await (await post("/categories", { name: "Logic Cat" })).json() as Category).id;
+    await post("/items", { name: "Logic Item 1", description: "d", count: 5,  categoryId: catId });
+    await post("/items", { name: "Logic Item 2", description: "d", count: 15, categoryId: catId });
+    await post("/items", { name: "Logic Item 3", description: "d", count: 25 });
+  });
+
+  it("count gt 4 and count lt 20 returns items in range", async () => {
+    const f = encodeURIComponent("count gt 4 and count lt 20");
+    const body = await (await get(`/items?$filter=${f}`)).json() as PagedItems;
+    expect(body.items.every((i) => i.count > 4 && i.count < 20)).toBe(true);
+  });
+
+  it("count lt 10 or count gt 20 returns items outside middle range", async () => {
+    const f = encodeURIComponent("count lt 10 or count gt 20");
+    const body = await (await get(`/items?$filter=${f}`)).json() as PagedItems;
+    expect(body.items.every((i) => i.count < 10 || i.count > 20)).toBe(true);
+  });
+
+  it("categoryId eq 'X' and count gt 10 combines category and numeric filter", async () => {
+    const f = encodeURIComponent(`categoryId eq '${catId}' and count gt 10`);
+    const body = await (await get(`/items?$filter=${f}`)).json() as PagedItems;
+    expect(body.items.every((i) => i.categoryId === catId && i.count > 10)).toBe(true);
+    expect(body.total).toBe(1);
+  });
+
+  it("parentheses group correctly", async () => {
+    const f = encodeURIComponent(`(count gt 10 and count lt 20) or count gt 24`);
+    const body = await (await get(`/items?$filter=${f}`)).json() as PagedItems;
+    expect(body.items.every((i) => (i.count > 10 && i.count < 20) || i.count > 24)).toBe(true);
+  });
+});
+
+
+describe("$filter — invalid expressions", () => {
+  it("malformed $filter returns 400", async () => {
+    const f = encodeURIComponent("count gt");
+    const res = await get(`/items?$filter=${f}`);
+    expect(res.status).toBe(400);
+  });
+
+  it("unknown operator returns 400", async () => {
+    const f = encodeURIComponent("count === 5");
+    const res = await get(`/items?$filter=${f}`);
+    expect(res.status).toBe(400);
   });
 });
 
