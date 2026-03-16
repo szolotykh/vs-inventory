@@ -5,8 +5,18 @@ import {
   listMetadata, setMetadata, deleteMetadataKey,
 } from "../core/db.ts";
 import type { Metadata } from "../core/db.ts";
+import { config } from "../core/config.ts";
+
+function checkAuth(req: Request): Response | null {
+  if (!config.enableAuth) return null;
+  const auth = req.headers.get("Authorization");
+  if (auth === `Bearer ${config.apiKey}`) return null;
+  return new Response("Unauthorized", { status: 401 });
+}
 
 async function handler(req: Request): Promise<Response> {
+  const authError = checkAuth(req);
+  if (authError) return authError;
   const url = new URL(req.url);
   const parts = url.pathname.replace(/^\//, "").split("/");
   const seg0 = parts[0];

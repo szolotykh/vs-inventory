@@ -116,6 +116,8 @@ ${c.bold}Commands:${c.reset}
   ${c.cyan}/mcp${c.reset} tools list                                   List available MCP tools
   ${c.cyan}/mcp${c.reset} tools call <name> [key=value ...]            Call an MCP tool
 
+  ${c.cyan}/auth${c.reset} genkey                                      Generate a new random API key
+
   ${c.cyan}/help${c.reset}                                             Show this help
   ${c.cyan}/exit${c.reset}                                             Quit
 
@@ -432,6 +434,20 @@ async function handleMcp(action: string | undefined, rest: string[]) {
   }
 }
 
+function handleAuth(action: string | undefined) {
+  switch (action) {
+    case "genkey": {
+      const key = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
+      console.log(`  ${c.bold}Generated API key:${c.reset}`);
+      console.log(`  ${c.yellow}${key}${c.reset}`);
+      info('Set API_KEY=<key> and ENABLE_AUTH=true in your .env to activate.');
+      break;
+    }
+    default:
+      warn("Unknown action. Try: genkey");
+  }
+}
+
 async function main() {
   console.log(`${c.bold}Storage CLI${c.reset} ${c.dim}— type /help for commands${c.reset}\n`);
 
@@ -455,6 +471,7 @@ async function main() {
         case "images":     await handleImages(action, rest); break;
         case "metadata":   handleMetadata(action, rest); break;
         case "mcp":        await handleMcp(action, rest); break;
+        case "auth":       handleAuth(action); break;
         case "help":       console.log(HELP); break;
         case "exit":
         case "quit":

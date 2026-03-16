@@ -12,4 +12,10 @@ export const config = {
 
   /** Directory for uploaded image files */
   get uploadsDir() { return process.env["UPLOADS_DIR"] ?? "./uploads"; },
+
+  /** Whether API key authentication is required (set ENABLE_AUTH=true to enable) */
+  get enableAuth() { return process.env["ENABLE_AUTH"] === "true"; },
+
+  /** API key for authentication (required when enableAuth is true) */
+  get apiKey() { return process.env["API_KEY"] ?? ""; },
 };

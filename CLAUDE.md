@@ -27,6 +27,8 @@ All settings live in `core/config.ts` using lazy getters that read from `process
 | `MCP_PORT` | `8080` | MCP server port |
 | `DB_PATH` | `db.sqlite` | SQLite database file path |
 | `UPLOADS_DIR` | `./uploads` | Image file storage directory |
+| `ENABLE_AUTH` | `false` | Enable API key authentication for REST API and MCP server |
+| `API_KEY` | _(empty)_ | Bearer token required when `ENABLE_AUTH=true` |
 
 Template env file: `.env.dev`
 

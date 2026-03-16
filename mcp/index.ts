@@ -7,7 +7,16 @@ import { createServer } from "node:http";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { createMcpServer } from "./server.ts";
 import { config } from "../core/config.ts";
-import type { IncomingMessage } from "node:http";
+import type { IncomingMessage, ServerResponse } from "node:http";
+
+function checkAuth(req: IncomingMessage, res: ServerResponse): boolean {
+  if (!config.enableAuth) return true;
+  const auth = req.headers["authorization"];
+  if (auth === `Bearer ${config.apiKey}`) return true;
+  res.writeHead(401);
+  res.end("Unauthorized");
+  return false;
+}
 
 const port = config.mcpPort;
 
@@ -29,6 +38,8 @@ const httpServer = createServer(async (req, res) => {
     res.end("Not Found");
     return;
   }
+
+  if (!checkAuth(req, res)) return;
 
   const sessionId = req.headers["mcp-session-id"] as string | undefined;
 
