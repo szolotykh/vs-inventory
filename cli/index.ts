@@ -12,8 +12,8 @@ import {
   listCategories, addCategory, editCategory, deleteCategory,
   listImages, addImage, deleteImage,
   listMetadata, setMetadata, deleteMetadataKey,
-  closeDB,
-} from "../core/db.ts";
+} from "../core/operations/index.ts";
+import { closeDB } from "../core/data/db.ts";
 import { config } from "../core/config.ts";
 import type { Item, Category, Image, Metadata } from "../core/models/index.ts";
 

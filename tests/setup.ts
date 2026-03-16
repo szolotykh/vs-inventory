@@ -1,7 +1,7 @@
 import { beforeAll, afterAll } from "bun:test";
 import { rm } from "node:fs/promises";
 import { createServer } from "../api/server.ts";
-import { closeDB } from "../core/db.ts";
+import { closeDB } from "../core/data/db.ts";
 
 // Must be set before any db function is called (getDB() reads it lazily)
 process.env["DB_PATH"] = "./test-db.sqlite";

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { BaseTool } from "../base.ts";
-import { countItems, listItems, getItem, addItem, editItem, deleteItem } from "../../core/db.ts";
+import { countItems, listItems, getItem, addItem, editItem, deleteItem } from "../../core/operations/items.ts";
 
 export class ListItemsTool extends BaseTool {
   name = "list_items";

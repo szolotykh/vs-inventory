@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { BaseTool } from "../base.ts";
-import { listImages, addImage, deleteImage } from "../../core/db.ts";
+import { listImages, addImage, deleteImage } from "../../core/operations/images.ts";
 
 export class ListImagesTool extends BaseTool {
   name = "list_images";

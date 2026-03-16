@@ -3,7 +3,7 @@ import {
   listCategories, addCategory, editCategory, deleteCategory,
   listImages, addImage, loadImageFile, deleteImage,
   listMetadata, setMetadata, deleteMetadataKey,
-} from "../core/db.ts";
+} from "../core/operations/index.ts";
 import type { Metadata } from "../core/models/index.ts";
 import { config } from "../core/config.ts";
 

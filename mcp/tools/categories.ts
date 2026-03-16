@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { BaseTool } from "../base.ts";
-import { listCategories, addCategory, editCategory, deleteCategory } from "../../core/db.ts";
+import { listCategories, addCategory, editCategory, deleteCategory } from "../../core/operations/categories.ts";
 
 export class ListCategoriesTool extends BaseTool {
   name = "list_categories";

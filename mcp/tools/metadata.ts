@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { BaseTool } from "../base.ts";
-import { listMetadata, setMetadata, deleteMetadataKey } from "../../core/db.ts";
+import { listMetadata, setMetadata, deleteMetadataKey } from "../../core/operations/metadata.ts";
 
 export class ListMetadataTool extends BaseTool {
   name = "list_metadata";
