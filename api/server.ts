@@ -177,5 +177,8 @@ async function handler(req: Request): Promise<Response> {
 }
 
 export function createServer(port: number) {
-  return Bun.serve({ port, fetch: handler });
+  const tls = config.tlsCert && config.tlsKey
+    ? { cert: Bun.file(config.tlsCert), key: Bun.file(config.tlsKey) }
+    : undefined;
+  return Bun.serve({ port, tls, fetch: handler });
 }

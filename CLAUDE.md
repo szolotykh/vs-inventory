@@ -29,6 +29,8 @@ All settings live in `core/config.ts` using lazy getters that read from `process
 | `UPLOADS_DIR` | `./uploads` | Image file storage directory |
 | `ENABLE_AUTH` | `false` | Enable API key authentication for REST API and MCP server |
 | `API_KEY` | _(empty)_ | Bearer token required when `ENABLE_AUTH=true` |
+| `TLS_CERT` | _(empty)_ | Path to PEM certificate — enables HTTPS on both servers when set with `TLS_KEY` |
+| `TLS_KEY` | _(empty)_ | Path to PEM private key — enables HTTPS on both servers when set with `TLS_CERT` |
 
 Template env file: `.env.dev`
 

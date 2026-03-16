@@ -18,4 +18,10 @@ export const config = {
 
   /** API key for authentication (required when enableAuth is true) */
   get apiKey() { return process.env["API_KEY"] ?? ""; },
+
+  /** Path to TLS certificate file (PEM). Set both tlsCert and tlsKey to enable HTTPS */
+  get tlsCert() { return process.env["TLS_CERT"] ?? ""; },
+
+  /** Path to TLS private key file (PEM). Set both tlsCert and tlsKey to enable HTTPS */
+  get tlsKey() { return process.env["TLS_KEY"] ?? ""; },
 };

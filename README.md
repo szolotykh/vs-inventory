@@ -24,6 +24,23 @@ Copy `.env.dev` to `.env` and adjust as needed.
 | `UPLOADS_DIR` | `./uploads` | Image file storage directory |
 | `ENABLE_AUTH` | `false` | Enable API key authentication |
 | `API_KEY` | _(empty)_ | Bearer token required when `ENABLE_AUTH=true` |
+| `TLS_CERT` | _(empty)_ | Path to PEM certificate file — enables HTTPS when set with `TLS_KEY` |
+| `TLS_KEY` | _(empty)_ | Path to PEM private key file — enables HTTPS when set with `TLS_CERT` |
+
+## HTTPS
+
+Set `TLS_CERT` and `TLS_KEY` to paths of PEM-encoded files to enable HTTPS on both the REST API and MCP server:
+
+```env
+TLS_CERT=/path/to/cert.pem
+TLS_KEY=/path/to/key.pem
+```
+
+For local development you can generate a self-signed cert:
+
+```bash
+openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes -subj "/CN=localhost"
+```
 
 ## Authentication
 

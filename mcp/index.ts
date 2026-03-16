@@ -3,7 +3,9 @@
  * Each client session gets its own McpServer + transport instance.
  * Run with: bun mcp  (port configurable via MCP_PORT, default 8080)
  */
-import { createServer } from "node:http";
+import * as http from "node:http";
+import * as https from "node:https";
+import { readFileSync } from "node:fs";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { createMcpServer } from "./server.ts";
 import { config } from "../core/config.ts";
@@ -30,7 +32,7 @@ async function readBody(req: IncomingMessage): Promise<unknown> {
   return JSON.parse(Buffer.concat(chunks).toString());
 }
 
-const httpServer = createServer(async (req, res) => {
+async function requestHandler(req: IncomingMessage, res: ServerResponse) {
   const url = new URL(req.url!, `http://localhost:${port}`);
 
   if (url.pathname !== "/mcp") {
@@ -107,8 +109,14 @@ const httpServer = createServer(async (req, res) => {
       res.end("Internal Server Error");
     }
   }
-});
+}
 
+const useTls = config.tlsCert && config.tlsKey;
+const httpServer = useTls
+  ? https.createServer({ cert: readFileSync(config.tlsCert), key: readFileSync(config.tlsKey) }, requestHandler)
+  : http.createServer(requestHandler);
+
+const protocol = useTls ? "https" : "http";
 httpServer.listen(port, () => {
-  console.log(`MCP server listening on http://localhost:${port}/mcp`);
+  console.log(`MCP server listening on ${protocol}://localhost:${port}/mcp`);
 });
