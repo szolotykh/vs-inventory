@@ -3,6 +3,9 @@ node_modules
 
 # local database
 db.json
+
+# file-based data store
+data/
 *.sqlite
 *.sqlite-wal
 *.sqlite-shm
@@ -44,3 +47,6 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 # local settings
 .claude/settings.local.json
+
+# Database files
+*.db
