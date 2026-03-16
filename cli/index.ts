@@ -15,7 +15,7 @@ import {
   closeDB,
 } from "../core/db.ts";
 import { config } from "../core/config.ts";
-import type { Item, Category, Image, Metadata } from "../core/db.ts";
+import type { Item, Category, Image, Metadata } from "../core/models/index.ts";
 
 const rl = readline.createInterface({ input: stdin, output: stdout });
 

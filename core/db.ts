@@ -2,11 +2,9 @@ import { Database } from "bun:sqlite";
 import { mkdir, rm, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { config } from "./config.ts";
+import type { Category, Item, Image, Metadata } from "./models/index.ts";
 
-export type Category = { id: string; name: string };
-export type Item = { id: string; name: string; description: string; count: number; categoryId?: string };
-export type Image = { id: string; itemId: string; filename: string; mimeType: string; size: number };
-export type Metadata = { key: string; value: string };
+export type { Category, Item, Image, Metadata } from "./models/index.ts";
 
 /** Raw SQLite row — categoryId is NULL rather than omitted */
 type ItemRow = { id: string; name: string; description: string; count: number; categoryId: string | null };

@@ -4,7 +4,7 @@ import {
   listImages, addImage, loadImageFile, deleteImage,
   listMetadata, setMetadata, deleteMetadataKey,
 } from "../core/db.ts";
-import type { Metadata } from "../core/db.ts";
+import type { Metadata } from "../core/models/index.ts";
 import { config } from "../core/config.ts";
 
 function checkAuth(req: Request): Response | null {
