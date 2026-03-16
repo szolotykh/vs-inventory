@@ -1,6 +1,9 @@
 # dependencies (bun install)
 node_modules
 
+# TLS certificates
+cert/
+
 # local database
 db.json
 
