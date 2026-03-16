@@ -1,6 +1,7 @@
 import { getDB } from "./db.ts";
 import type { IItemRepository } from "../types.ts";
 import type { Item } from "../../models/index.ts";
+import { parseODataFilter, toSqlWhere } from "../odata.ts";
 
 /** Raw SQLite row — categoryId is NULL rather than omitted */
 type ItemRow = { id: string; name: string; description: string; count: number; categoryId: string | null };
@@ -12,37 +13,26 @@ function rowToItem(row: ItemRow): Item {
   return item;
 }
 
-function buildItemsWhere(opts?: { categoryId?: string; search?: string }): { where: string; params: (string | number)[] } {
-  const conditions: string[] = [];
-  const params: (string | number)[] = [];
-  if (opts?.categoryId !== undefined) {
-    conditions.push("categoryId = ?");
-    params.push(opts.categoryId);
-  }
-  if (opts?.search !== undefined) {
-    conditions.push("(name LIKE ? OR description LIKE ?)");
-    const pattern = `%${opts.search}%`;
-    params.push(pattern, pattern);
-  }
-  return { where: conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "", params };
+function getWhere($filter?: string): { where: string; params: (string | number | null)[] } {
+  if (!$filter) return { where: "", params: [] };
+  const { clause, params } = toSqlWhere(parseODataFilter($filter));
+  return { where: `WHERE ${clause}`, params };
 }
 
 export class SqliteItemRepository implements IItemRepository {
-  count(opts?: { categoryId?: string; search?: string }): number {
-    const { where, params } = buildItemsWhere(opts);
+  count($filter?: string): number {
+    const { where, params } = getWhere($filter);
     return (getDB().query(`SELECT COUNT(*) as n FROM items ${where}`).get(...params) as { n: number }).n;
   }
 
-  async list(opts?: { limit?: number; offset?: number; categoryId?: string; search?: string }): Promise<Item[]> {
+  async list(opts?: { limit?: number; offset?: number; $filter?: string }): Promise<Item[]> {
     const db = getDB();
     const offset = opts?.offset ?? 0;
-    const { where, params } = buildItemsWhere(opts);
-
+    const { where, params } = getWhere(opts?.$filter);
     if (opts?.limit !== undefined) {
       return db.query(`SELECT * FROM items ${where} LIMIT ? OFFSET ?`).all(...params, opts.limit, offset).map((r) => rowToItem(r as ItemRow));
     }
     if (offset > 0) {
-      // SQLite requires LIMIT to use OFFSET; -1 means unlimited
       return db.query(`SELECT * FROM items ${where} LIMIT -1 OFFSET ?`).all(...params, offset).map((r) => rowToItem(r as ItemRow));
     }
     if (where) {

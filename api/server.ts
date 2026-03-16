@@ -31,8 +31,7 @@ async function handler(req: Request): Promise<Response> {
         if (req.method === "GET") {
           const limitParam = url.searchParams.get("limit");
           const offsetParam = url.searchParams.get("offset");
-          const categoryId = url.searchParams.get("categoryId") ?? undefined;
-          const search = url.searchParams.get("search") ?? undefined;
+          const $filter = url.searchParams.get("$filter") ?? undefined;
           const limit = limitParam !== null ? parseInt(limitParam, 10) : undefined;
           const offset = offsetParam !== null ? parseInt(offsetParam, 10) : undefined;
           if (limit !== undefined && (!Number.isInteger(limit) || limit < 1)) {
@@ -41,9 +40,13 @@ async function handler(req: Request): Promise<Response> {
           if (offset !== undefined && (!Number.isInteger(offset) || offset < 0)) {
             return new Response("offset must be a non-negative integer", { status: 400 });
           }
-          const total = countItems({ categoryId, search });
-          const items = await listItems({ limit, offset, categoryId, search });
-          return Response.json({ items, total, limit: limit ?? null, offset: offset ?? 0 });
+          try {
+            const total = countItems($filter);
+            const result = await listItems({ limit, offset, $filter });
+            return Response.json({ items: result, total, limit: limit ?? null, offset: offset ?? 0 });
+          } catch (e) {
+            return new Response(`Invalid $filter: ${e instanceof Error ? e.message : e}`, { status: 400 });
+          }
         }
         if (req.method === "POST") {
           const body = await req.json() as { name: string; description: string; count: number; categoryId?: string };

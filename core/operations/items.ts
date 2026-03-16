@@ -1,10 +1,10 @@
 import { items, images, metadata } from "../data/index.ts";
 
-export function countItems(opts?: { categoryId?: string; search?: string }) {
-  return items.count(opts);
+export function countItems($filter?: string) {
+  return items.count($filter);
 }
 
-export function listItems(opts?: { limit?: number; offset?: number; categoryId?: string; search?: string }) {
+export function listItems(opts?: { limit?: number; offset?: number; $filter?: string }) {
   return items.list(opts);
 }
 

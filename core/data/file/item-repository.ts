@@ -1,24 +1,22 @@
 import { readStore, writeStore } from "./store.ts";
 import type { IItemRepository } from "../types.ts";
 import type { Item } from "../../models/index.ts";
-
-function filter(items: Item[], opts?: { categoryId?: string; search?: string }): Item[] {
-  let result = items;
-  if (opts?.categoryId !== undefined) result = result.filter((i) => i.categoryId === opts.categoryId);
-  if (opts?.search !== undefined) {
-    const s = opts.search.toLowerCase();
-    result = result.filter((i) => i.name.toLowerCase().includes(s) || i.description.toLowerCase().includes(s));
-  }
-  return result;
-}
+import { parseODataFilter, evaluateFilter } from "../odata.ts";
 
 export class FileItemRepository implements IItemRepository {
-  count(opts?: { categoryId?: string; search?: string }): number {
-    return filter(readStore<Item>("items"), opts).length;
+  count($filter?: string): number {
+    const items = readStore<Item>("items");
+    if (!$filter) return items.length;
+    const ast = parseODataFilter($filter);
+    return items.filter((i) => evaluateFilter(i as Record<string, unknown>, ast)).length;
   }
 
-  async list(opts?: { limit?: number; offset?: number; categoryId?: string; search?: string }): Promise<Item[]> {
-    let items = filter(readStore<Item>("items"), opts);
+  async list(opts?: { limit?: number; offset?: number; $filter?: string }): Promise<Item[]> {
+    let items = readStore<Item>("items");
+    if (opts?.$filter) {
+      const ast = parseODataFilter(opts.$filter);
+      items = items.filter((i) => evaluateFilter(i as Record<string, unknown>, ast));
+    }
     const offset = opts?.offset ?? 0;
     if (offset > 0) items = items.slice(offset);
     if (opts?.limit !== undefined) items = items.slice(0, opts.limit);

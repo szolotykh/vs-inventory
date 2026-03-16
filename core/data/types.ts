@@ -1,8 +1,8 @@
 import type { Item, Category, Image, Metadata } from "../models/index.ts";
 
 export interface IItemRepository {
-  count(opts?: { categoryId?: string; search?: string }): number;
-  list(opts?: { limit?: number; offset?: number; categoryId?: string; search?: string }): Promise<Item[]>;
+  count($filter?: string): number;
+  list(opts?: { limit?: number; offset?: number; $filter?: string }): Promise<Item[]>;
   get(id: string): Item | null;
   add(data: { name: string; description: string; count: number; categoryId?: string }): Promise<Item>;
   edit(id: string, data: { name?: string; description?: string; count?: number; categoryId?: string | null }): Promise<Item | null>;

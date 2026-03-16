@@ -5,22 +5,21 @@ import { countItems, listItems, getItem, addItem, editItem, deleteItem } from ".
 export class ListItemsTool extends BaseTool {
   name = "list_items";
   category = "items";
-  description = "Storage: list inventory items with optional pagination, category filter, and text search. Returns a page object with items array, total count, limit, and offset. Omit limit to retrieve all items.";
+  description = "Storage: list inventory items with optional pagination and OData filtering. Use $filter for OData expressions (e.g. \"categoryId eq 'abc'\" or \"count gt 5\"). Returns a page object with items array, total count, limit, and offset.";
   requireUserApproval = false;
-  tags = ["storage", "items", "list", "search"];
-  whenToUse = "When you need to browse, filter, or search inventory items";
+  tags = ["storage", "items", "list", "filter"];
+  whenToUse = "When you need to browse or filter inventory items";
   whenNotToUse = "When you know the specific item ID (use get_item instead)";
 
   schema = {
     limit: z.number().int().min(1).optional().describe("Max items to return"),
     offset: z.number().int().min(0).optional().describe("Number of items to skip"),
-    categoryId: z.string().optional().describe("Filter to items in this category"),
-    search: z.string().optional().describe("Search term matched against name and description (case-insensitive)"),
+    $filter: z.string().optional().describe("OData filter expression, e.g. \"categoryId eq 'abc'\" or \"count gt 5\""),
   };
 
-  async execute({ limit, offset, categoryId, search }: any) {
-    const total = countItems({ categoryId, search });
-    const items = await listItems({ limit, offset, categoryId, search });
+  async execute({ limit, offset, $filter }: any) {
+    const total = countItems($filter);
+    const items = await listItems({ limit, offset, $filter });
     return { items, total, limit: limit ?? null, offset: offset ?? 0 };
   }
 }
