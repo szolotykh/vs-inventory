@@ -24,4 +24,10 @@ export const config = {
 
   /** Path to TLS private key file (PEM). Set both tlsCert and tlsKey to enable HTTPS */
   get tlsKey() { return process.env["TLS_KEY"] ?? ""; },
+
+  /** Data source: "file" (default) or "sqlite" */
+  get dataSource() { return process.env["DATA_SOURCE"] ?? "file"; },
+
+  /** Directory for JSON data files when DATA_SOURCE=file */
+  get fileDbDir() { return process.env["FILE_DB_DIR"] ?? "./data"; },
 };

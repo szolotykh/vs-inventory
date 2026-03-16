@@ -26,6 +26,8 @@ Copy `.env.dev` to `.env` and adjust as needed.
 | `API_KEY` | _(empty)_ | Bearer token required when `ENABLE_AUTH=true` |
 | `TLS_CERT` | _(empty)_ | Path to PEM certificate file — enables HTTPS when set with `TLS_KEY` |
 | `TLS_KEY` | _(empty)_ | Path to PEM private key file — enables HTTPS when set with `TLS_CERT` |
+| `DATA_SOURCE` | `file` | Data source: `file` (JSON files, default) or `sqlite` |
+| `FILE_DB_DIR` | `./data` | Directory for JSON data files when `DATA_SOURCE=file` |
 
 ## HTTPS
 
@@ -158,19 +160,25 @@ IDs can be shortened to a unique prefix (e.g. `a3f8` instead of the full UUID).
 ## Project Structure
 
 ```
-index.ts          Entry point; starts API server
+index.ts              Entry point; starts API server
 core/
-  config.ts       Centralized configuration (env vars with defaults)
-  db.ts           SQLite persistence layer
+  config.ts           Centralized configuration (env vars with defaults)
+  models/             Shared types: Item, Category, Image, Metadata
+  data/
+    types.ts          Repository interfaces (IItemRepository, etc.)
+    index.ts          Exports active repositories — swap DATA_SOURCE here
+    sqlite/           SQLite implementation (default)
+    file/             File-based implementation (JSON docs, DATA_SOURCE=file)
+  operations/         Business logic and orchestration
 api/
-  server.ts       HTTP router
+  server.ts           HTTP router
 mcp/
-  server.ts       MCP tool definitions
-  index.ts        MCP HTTP entry point (Streamable HTTP transport)
+  server.ts           MCP tool definitions
+  index.ts            MCP HTTP entry point (Streamable HTTP transport)
 cli/
-  index.ts        Interactive REPL
+  index.ts            Interactive REPL
 tests/
-  setup.ts        Shared test setup
+  setup.ts            Shared test setup
   categories.test.ts
   items.test.ts
   images.test.ts

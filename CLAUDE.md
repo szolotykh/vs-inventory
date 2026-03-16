@@ -31,6 +31,8 @@ All settings live in `core/config.ts` using lazy getters that read from `process
 | `API_KEY` | _(empty)_ | Bearer token required when `ENABLE_AUTH=true` |
 | `TLS_CERT` | _(empty)_ | Path to PEM certificate — enables HTTPS on both servers when set with `TLS_KEY` |
 | `TLS_KEY` | _(empty)_ | Path to PEM private key — enables HTTPS on both servers when set with `TLS_CERT` |
+| `DATA_SOURCE` | `file` | Data source: `file` (JSON files) or `sqlite` |
+| `FILE_DB_DIR` | `./data` | Directory for JSON data files when `DATA_SOURCE=file` |
 
 Template env file: `.env.dev`
 
