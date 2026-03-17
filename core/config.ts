@@ -11,7 +11,7 @@ export const config = {
   get dbPath() { return process.env["DB_PATH"] ?? "db.sqlite"; },
 
   /** Directory for uploaded image files */
-  get uploadsDir() { return process.env["UPLOADS_DIR"] ?? "./uploads"; },
+  get uploadsDir() { return process.env["UPLOADS_DIR"] ?? "./data/artifacts"; },
 
   /** Whether API key authentication is required (set ENABLE_AUTH=true to enable) */
   get enableAuth() { return process.env["ENABLE_AUTH"] === "true"; },

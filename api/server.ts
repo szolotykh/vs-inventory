@@ -24,6 +24,10 @@ async function handler(req: Request): Promise<Response> {
   const seg2 = parts[2];
   const seg3 = parts[3];
 
+  if (seg0 === "health") {
+    return Response.json({ status: "ok" });
+  }
+
   try {
     // /items
     if (seg0 === "items") {

@@ -4,24 +4,58 @@ A local storage management service with a REST API, MCP server, and interactive 
 
 ## Quick Start
 
+### Docker (recommended)
+
+```bash
+cp .env.example .env
+docker compose up -d
+```
+
+API available at `http://localhost:8080`, MCP server at `http://localhost:3000/mcp`.
+
+Run a single service:
+
+```bash
+docker compose up -d api
+docker compose up -d mcp
+```
+
+### Local development
+
 ```bash
 bun install
-bun start        # REST API on port 3000
-bun mcp          # MCP server on port 8080
+bun start        # REST API on port 8080
+bun mcp          # MCP server on port 3000
 bun cli          # Interactive CLI
 bun test         # Run integration tests
 ```
 
 ## Configuration
 
-Copy `.env.dev` to `.env` and adjust as needed.
+### Docker
+
+Copy `.env.example` to `.env`. All variables are optional — defaults work out of the box.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `API_PORT` | `3000` | REST API server port |
-| `MCP_PORT` | `8080` | MCP server port |
+| `API_HOST_PORT` | `8080` | Host port mapped to the API container |
+| `MCP_HOST_PORT` | `3000` | Host port mapped to the MCP container |
+| `DATA_SOURCE` | `file` | Data source: `file` or `sqlite` |
+| `ENABLE_AUTH` | `false` | Enable API key authentication |
+| `API_KEY` | _(empty)_ | Bearer token required when `ENABLE_AUTH=true` |
+| `TLS_CERT` | _(empty)_ | Path on the **host** to PEM certificate — enables HTTPS when set with `TLS_KEY` |
+| `TLS_KEY` | _(empty)_ | Path on the **host** to PEM private key |
+
+### Local
+
+Copy `.env.example` to `.env` and adjust as needed.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `API_PORT` | `8080` | REST API server port |
+| `MCP_PORT` | `3000` | MCP server port |
 | `DB_PATH` | `db.sqlite` | SQLite database file path |
-| `UPLOADS_DIR` | `./uploads` | Image file storage directory |
+| `UPLOADS_DIR` | `./data/artifacts` | Image file storage directory |
 | `ENABLE_AUTH` | `false` | Enable API key authentication |
 | `API_KEY` | _(empty)_ | Bearer token required when `ENABLE_AUTH=true` |
 | `TLS_CERT` | _(empty)_ | Path to PEM certificate file — enables HTTPS when set with `TLS_KEY` |
@@ -31,17 +65,26 @@ Copy `.env.dev` to `.env` and adjust as needed.
 
 ## HTTPS
 
-Set `TLS_CERT` and `TLS_KEY` to paths of PEM-encoded files to enable HTTPS on both the REST API and MCP server:
+Set `TLS_CERT` and `TLS_KEY` to paths of PEM-encoded files to enable HTTPS on both the REST API and MCP server.
+
+Generate a self-signed certificate for local testing:
+
+```bash
+openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes -subj "/CN=localhost"
+```
+
+**With Docker**, point to the host paths — the files are mounted into the containers automatically:
+
+```env
+TLS_CERT=./certs/cert.pem
+TLS_KEY=./certs/key.pem
+```
+
+**Locally**, set the paths in `.env`:
 
 ```env
 TLS_CERT=/path/to/cert.pem
 TLS_KEY=/path/to/key.pem
-```
-
-For local development you can generate a self-signed cert:
-
-```bash
-openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes -subj "/CN=localhost"
 ```
 
 ## Authentication
@@ -59,6 +102,16 @@ To generate a key, use the CLI:
 ```
 
 Then set the printed key as `API_KEY` in your `.env`.
+
+## Data Persistence (Docker)
+
+Data is stored in a single bind-mounted host directory (`./data` by default), so it persists across restarts, container recreations, and even if the container is deleted. Uploaded images are stored in `data/artifacts/`.
+
+To use a different location, set `DATA_DIR` in your `.env`:
+
+```env
+DATA_DIR=/opt/vsinventory/data
+```
 
 ## REST API
 

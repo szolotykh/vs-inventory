@@ -1,0 +1,56 @@
+services:
+  api:
+    build: .
+    image: vsinventory
+    container_name: vsinventory-api
+    ports:
+      - "${API_HOST_PORT:-8080}:8080"
+    volumes:
+      - ${DATA_DIR:-./data}:/app/data
+      - ${TLS_CERT:-/dev/null}:/app/certs/cert.pem:ro
+      - ${TLS_KEY:-/dev/null}:/app/certs/key.pem:ro
+    environment:
+      API_PORT: 8080
+      DATA_SOURCE: ${DATA_SOURCE:-file}
+      FILE_DB_DIR: /app/data
+      UPLOADS_DIR: /app/data/artifacts
+      DB_PATH: /app/data/db.sqlite
+      ENABLE_AUTH: ${ENABLE_AUTH:-false}
+      API_KEY: ${API_KEY:-}
+      TLS_CERT: ${TLS_CERT:+/app/certs/cert.pem}
+      TLS_KEY: ${TLS_KEY:+/app/certs/key.pem}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "sh", "-c", "wget -qO- --no-check-certificate $$([ -n \"$$TLS_CERT\" ] && echo https || echo http)://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+
+  mcp:
+    build: .
+    image: vsinventory
+    container_name: vsinventory-mcp
+    depends_on:
+      api:
+        condition: service_healthy
+    command: bun mcp
+    ports:
+      - "${MCP_HOST_PORT:-3000}:3000"
+    volumes:
+      - ${DATA_DIR:-./data}:/app/data
+      - ${TLS_CERT:-/dev/null}:/app/certs/cert.pem:ro
+      - ${TLS_KEY:-/dev/null}:/app/certs/key.pem:ro
+    environment:
+      MCP_PORT: 3000
+      DATA_SOURCE: ${DATA_SOURCE:-file}
+      FILE_DB_DIR: /app/data
+      UPLOADS_DIR: /app/data/artifacts
+      DB_PATH: /app/data/db.sqlite
+      ENABLE_AUTH: ${ENABLE_AUTH:-false}
+      API_KEY: ${API_KEY:-}
+      TLS_CERT: ${TLS_CERT:+/app/certs/cert.pem}
+      TLS_KEY: ${TLS_KEY:+/app/certs/key.pem}
+    restart: unless-stopped
+    healthcheck:
+      disable: true

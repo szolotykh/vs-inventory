@@ -10,9 +10,9 @@ This project uses [Bun](https://bun.com) as the runtime and package manager (not
 
 ```bash
 bun install          # Install dependencies
-bun start            # Start the API server (default port 3000)
+bun start            # Start the API server (default port 8080)
 bun cli              # Start interactive CLI
-bun mcp              # Start MCP server (default port 8080)
+bun mcp              # Start MCP server (default port 3000)
 bun test             # Run all integration tests
 bun run <file.ts>    # Run any TypeScript file directly (no build step needed)
 ```
@@ -23,10 +23,10 @@ All settings live in `core/config.ts` using lazy getters that read from `process
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `API_PORT` | `3000` | REST API server port |
-| `MCP_PORT` | `8080` | MCP server port |
+| `API_PORT` | `8080` | REST API server port |
+| `MCP_PORT` | `3000` | MCP server port |
 | `DB_PATH` | `db.sqlite` | SQLite database file path |
-| `UPLOADS_DIR` | `./uploads` | Image file storage directory |
+| `UPLOADS_DIR` | `./data/artifacts` | Image file storage directory |
 | `ENABLE_AUTH` | `false` | Enable API key authentication for REST API and MCP server |
 | `API_KEY` | _(empty)_ | Bearer token required when `ENABLE_AUTH=true` |
 | `TLS_CERT` | _(empty)_ | Path to PEM certificate — enables HTTPS on both servers when set with `TLS_KEY` |
@@ -34,7 +34,7 @@ All settings live in `core/config.ts` using lazy getters that read from `process
 | `DATA_SOURCE` | `file` | Data source: `file` (JSON files) or `sqlite` |
 | `FILE_DB_DIR` | `./data` | Directory for JSON data files when `DATA_SOURCE=file` |
 
-Template env file: `.env.dev`
+Template env file: `.env.example`
 
 ## Project Structure
 
