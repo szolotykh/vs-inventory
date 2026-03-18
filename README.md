@@ -1,6 +1,31 @@
 # Storage
 
-A local storage management service with a REST API, MCP server, and interactive CLI. Built with [Bun](https://bun.sh) and SQLite.
+Storage is a lightweight, self-hosted inventory service for tracking physical items you keep on hand — especially consumables and supplies such as 3D printer filament, spare parts, tools, components, and workshop materials. It was originally designed for personal use and print-farm inventory management, but it also works well for labs, makerspaces, garages, small workshops, home storage, and other general inventory scenarios.
+
+The project is built for both humans and software. It exposes a REST API for dashboards, custom UIs, automations, and integrations, and an MCP server so AI agents can inspect, search, update, and manage inventory through standard tools. For quick manual workflows, it also includes an interactive CLI.
+
+Storage supports item categories, image attachments, and flexible metadata, so you can model real-world inventory without overcomplicating the schema. Whether you want to track spool counts, part photos, color and material details, storage locations, or brand-specific notes, the system gives you a simple core model with room to extend it.
+
+It is designed to be easy to run locally and easy to adapt: use Docker for a quick start, choose between file-based JSON or SQLite storage, and optionally enable authentication and HTTPS when you want to expose it more safely to other tools or clients.
+
+## Features
+
+- **Inventory tracking for real physical storage** — manage items with a name, description, count, and optional category
+- **Great for print farms and workshops** — useful for filament spools, nozzles, printer parts, electronics, hardware, tools, consumables, and general supplies
+- **General-purpose by design** — can also be used for home storage, lab materials, maker inventory, office supplies, or any other small physical inventory system
+- **Categories** — organize inventory into groups without forcing a rigid structure; deleting a category unlinks items instead of deleting them
+- **Images per item** — attach photos to inventory items so users or agents can visually identify what is in stock
+- **Flexible metadata** — store arbitrary key-value fields such as color, material, brand, size, weight, supplier, location, or notes
+- **Search and filtering** — find items quickly by search terms, category, and API query parameters
+- **Agent-ready MCP server** — exposes inventory operations as MCP tools over Streamable HTTP so compatible AI agents can work with the inventory directly
+- **REST API for apps and dashboards** — simple JSON API for building web dashboards, mobile tools, automations, and other integrations
+- **Interactive CLI** — manage inventory quickly from the terminal with slash commands for items, categories, images, metadata, auth, and MCP actions
+- **Dual storage backends** — use file-based JSON storage or SQLite, depending on how lightweight or structured you want the deployment to be
+- **Self-hosted and local-first** — easy to run on your own machine or server for private, personal, or workshop use
+- **Optional authentication** — secure both the REST API and MCP server with a Bearer token when needed
+- **Optional HTTPS** — enable TLS for local secure testing or safer deployment to other clients
+- **Docker-friendly setup** — quick startup with Docker Compose and persistent local data storage
+- **Built with Bun and TypeScript** — lightweight runtime, straightforward local development, and a codebase that is easy to extend
 
 ## Quick Start
 
