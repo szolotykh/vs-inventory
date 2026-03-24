@@ -3,8 +3,9 @@ import {
   listCategories, addCategory, editCategory, deleteCategory,
   listImages, addImage, loadImageFile, deleteImage,
   listMetadata, setMetadata, deleteMetadataKey,
+  countChangeLogs, listChangeLogs, getChangeLog,
 } from "../core/operations/index.ts";
-import type { Metadata } from "../core/models/index.ts";
+import type { Metadata, ChangeType, TargetType } from "../core/models/index.ts";
 import { config } from "../core/config.ts";
 
 function checkAuth(req: Request): Response | null {
@@ -173,6 +174,46 @@ async function handler(req: Request): Promise<Response> {
         const deleted = await deleteCategory(id);
         if (!deleted) return new Response("Not Found", { status: 404 });
         return new Response(null, { status: 204 });
+      }
+      return new Response("Method Not Allowed", { status: 405 });
+    }
+
+    // /changelogs
+    if (seg0 === "changelogs") {
+      if (seg1 === undefined || seg1 === "") {
+        if (req.method === "GET") {
+          const targetType = url.searchParams.get("targetType") ?? undefined;
+          const targetId = url.searchParams.get("targetId") ?? undefined;
+          const changeType = url.searchParams.get("changeType") ?? undefined;
+          const limitParam = url.searchParams.get("limit");
+          const offsetParam = url.searchParams.get("offset");
+          const limit = limitParam !== null ? parseInt(limitParam, 10) : undefined;
+          const offset = offsetParam !== null ? parseInt(offsetParam, 10) : undefined;
+          if (limit !== undefined && (!Number.isInteger(limit) || limit < 1)) {
+            return new Response("limit must be a positive integer", { status: 400 });
+          }
+          if (offset !== undefined && (!Number.isInteger(offset) || offset < 0)) {
+            return new Response("offset must be a non-negative integer", { status: 400 });
+          }
+          const opts = {
+            targetType: targetType as TargetType | undefined,
+            targetId,
+            changeType: changeType as ChangeType | undefined,
+            limit,
+            offset,
+          };
+          const total = countChangeLogs(opts);
+          const changelogs = listChangeLogs(opts);
+          return Response.json({ changelogs, total, limit: limit ?? null, offset: offset ?? 0 });
+        }
+        return new Response("Method Not Allowed", { status: 405 });
+      }
+
+      const id = seg1;
+      if (req.method === "GET") {
+        const log = getChangeLog(id);
+        if (!log) return new Response("Not Found", { status: 404 });
+        return Response.json(log);
       }
       return new Response("Method Not Allowed", { status: 405 });
     }

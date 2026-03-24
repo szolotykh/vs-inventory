@@ -1,4 +1,4 @@
-import type { Item, Category, Image, Metadata } from "../models/index.ts";
+import type { Item, Category, Image, Metadata, ChangeLog, ChangeType, TargetType } from "../models/index.ts";
 
 export interface IItemRepository {
   count($filter?: string): number;
@@ -32,4 +32,11 @@ export interface IMetadataRepository {
   set(itemId: string, entries: Metadata[]): Metadata[];
   deleteKey(itemId: string, key: string): boolean;
   deleteByItemId(itemId: string): void;
+}
+
+export interface IChangeLogRepository {
+  count(opts?: { targetType?: TargetType; targetId?: string; changeType?: ChangeType }): number;
+  list(opts?: { targetType?: TargetType; targetId?: string; changeType?: ChangeType; limit?: number; offset?: number }): ChangeLog[];
+  get(id: string): ChangeLog | null;
+  add(data: Omit<ChangeLog, "id" | "timestamp">): ChangeLog;
 }

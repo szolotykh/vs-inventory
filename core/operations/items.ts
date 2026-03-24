@@ -1,4 +1,16 @@
-import { items, images, metadata } from "../data/index.ts";
+import { items, images, metadata, changelog } from "../data/index.ts";
+import type { Item, ChangeEntry } from "../models/index.ts";
+
+function computeItemDiff(before: Item, after: Item): ChangeEntry[] {
+  const changes: ChangeEntry[] = [];
+  const fields = ["name", "description", "count", "categoryId"] as const;
+  for (const field of fields) {
+    const from = before[field] ?? null;
+    const to = after[field] ?? null;
+    if (from !== to) changes.push({ field, from, to });
+  }
+  return changes;
+}
 
 export function countItems($filter?: string) {
   return items.count($filter);
@@ -12,17 +24,25 @@ export function getItem(id: string) {
   return items.get(id);
 }
 
-export function addItem(data: { name: string; description: string; count: number; categoryId?: string }) {
-  return items.add(data);
+export async function addItem(data: { name: string; description: string; count: number; categoryId?: string }) {
+  const item = await items.add(data);
+  changelog.add({ targetId: item.id, targetType: "item", changeType: "create", changes: null });
+  return item;
 }
 
-export function editItem(id: string, data: { name?: string; description?: string; count?: number; categoryId?: string | null }) {
-  return items.edit(id, data);
+export async function editItem(id: string, data: { name?: string; description?: string; count?: number; categoryId?: string | null }) {
+  const before = items.get(id);
+  const after = await items.edit(id, data);
+  if (!after) return null;
+  const changes = computeItemDiff(before!, after);
+  changelog.add({ targetId: id, targetType: "item", changeType: "update", changes });
+  return after;
 }
 
 export async function deleteItem(id: string): Promise<boolean> {
   const deleted = await items.delete(id);
   if (!deleted) return false;
+  changelog.add({ targetId: id, targetType: "item", changeType: "delete", changes: null });
   await images.deleteByItemId(id);
   metadata.deleteByItemId(id);
   return true;

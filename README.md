@@ -16,6 +16,7 @@ It is designed to be easy to run locally and easy to adapt: use Docker for a qui
 - **Categories** — organize inventory into groups without forcing a rigid structure; deleting a category unlinks items instead of deleting them
 - **Images per item** — attach photos to inventory items so users or agents can visually identify what is in stock
 - **Flexible metadata** — store arbitrary key-value fields such as color, material, brand, size, weight, supplier, location, or notes
+- **Change log** — every create, update, and delete on items and categories is automatically recorded with a timestamp and a field-level diff for updates, giving a full audit trail
 - **Search and filtering** — find items quickly by search terms, category, and API query parameters
 - **Agent-ready MCP server** — exposes inventory operations as MCP tools over Streamable HTTP so compatible AI agents can work with the inventory directly
 - **REST API for apps and dashboards** — simple JSON API for building web dashboards, mobile tools, automations, and other integrations
@@ -192,11 +193,22 @@ Only `image/*` MIME types accepted. Image shape: `{ id, itemId, filename, mimeTy
 
 PUT replaces all metadata for the item. Metadata shape: `{ key, value }`
 
+### Change Log
+
+| Method | Path | Query params | Response |
+|--------|------|--------------|----------|
+| GET | `/changelogs` | `targetType`, `targetId`, `changeType`, `limit`, `offset` | `{ changelogs, total, limit, offset }` |
+| GET | `/changelogs/:id` | — | ChangeLog |
+
+ChangeLog shape: `{ id, targetId, targetType: "item"|"category", changeType: "create"|"update"|"delete", changes: ChangeEntry[]|null, timestamp }`
+
+Every write operation (add/edit/delete on items and categories) automatically appends a changelog entry. For update events, `changes` is an array of `{ field, from, to }` objects describing which fields changed. For create and delete events, `changes` is `null`.
+
 ## MCP Server
 
 The MCP server exposes all storage operations as tools via the [Model Context Protocol](https://modelcontextprotocol.io) over Streamable HTTP at `http://localhost:<MCP_PORT>/mcp`.
 
-Available tools: `list_items`, `get_item`, `create_item`, `update_item`, `delete_item`, `list_categories`, `create_category`, `update_category`, `delete_category`, `list_images`, `upload_image`, `delete_image`, `list_metadata`, `set_metadata`, `delete_metadata_key`
+Available tools: `list_items`, `get_item`, `create_item`, `update_item`, `delete_item`, `list_categories`, `create_category`, `update_category`, `delete_category`, `list_images`, `upload_image`, `delete_image`, `list_metadata`, `set_metadata`, `delete_metadata_key`, `list_change_logs`, `get_change_log`
 
 ## CLI
 
@@ -221,6 +233,9 @@ Run `bun cli` for an interactive REPL. All commands are slash-prefixed.
 /metadata set <itemId> <key>=<value> ...
 /metadata delete <itemId> <key>
 
+/changelog list [limit [offset]] [targetType=item|category] [changeType=create|update|delete] [targetId=<id>]
+/changelog get <id>
+
 /mcp connect [url]
 /mcp disconnect
 /mcp status
@@ -241,24 +256,29 @@ IDs can be shortened to a unique prefix (e.g. `a3f8` instead of the full UUID).
 index.ts              Entry point; starts API server
 core/
   config.ts           Centralized configuration (env vars with defaults)
-  models/             Shared types: Item, Category, Image, Metadata
+  models/             Shared types: Item, Category, Image, Metadata, ChangeLog
   data/
-    types.ts          Repository interfaces (IItemRepository, etc.)
+    types.ts          Repository interfaces (IItemRepository, IChangeLogRepository, …)
     index.ts          Exports active repositories — swap DATA_SOURCE here
-    sqlite/           SQLite implementation (default)
-    file/             File-based implementation (JSON docs, DATA_SOURCE=file)
-  operations/         Business logic and orchestration
+    sqlite/           SQLite implementations + schema
+    file/             File-based implementations (JSON files, DATA_SOURCE=file)
+    memory/           In-memory implementations (used by tests)
+  operations/         Business logic; all writes auto-record changelog entries
 api/
   server.ts           HTTP router
 mcp/
-  server.ts           MCP tool definitions
+  server.ts           MCP server — registers tools from mcp/tools/
+  tools/              One file per resource group
   index.ts            MCP HTTP entry point (Streamable HTTP transport)
 cli/
   index.ts            Interactive REPL
 tests/
-  setup.ts            Shared test setup
+  setup.ts            Shared test setup & helpers
   categories.test.ts
   items.test.ts
   images.test.ts
   metadata.test.ts
+  changelog.test.ts
+  odata.test.ts
+  operations.test.ts
 ```

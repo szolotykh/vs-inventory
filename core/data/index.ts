@@ -8,4 +8,5 @@ export const items = src.items;
 export const categories = src.categories;
 export const images = src.images;
 export const metadata = src.metadata;
+export const changelog = src.changelog;
 export const closeDB = src.closeDB;

@@ -8,6 +8,7 @@ import { ListItemsTool, GetItemTool, CreateItemTool, UpdateItemTool, DeleteItemT
 import { ListCategoriesTool, CreateCategoryTool, UpdateCategoryTool, DeleteCategoryTool } from "./tools/categories.ts";
 import { ListImagesTool, UploadImageTool, DeleteImageTool } from "./tools/images.ts";
 import { ListMetadataTool, SetMetadataTool, DeleteMetadataKeyTool } from "./tools/metadata.ts";
+import { ListChangeLogsTool, GetChangeLogTool } from "./tools/changelog.ts";
 
 const TOOLS: BaseTool[] = [
   new ListItemsTool(),
@@ -25,6 +26,8 @@ const TOOLS: BaseTool[] = [
   new ListMetadataTool(),
   new SetMetadataTool(),
   new DeleteMetadataKeyTool(),
+  new ListChangeLogsTool(),
+  new GetChangeLogTool(),
 ];
 
 function registerTool(server: McpServer, tool: BaseTool) {

@@ -13,10 +13,11 @@ import {
   listCategories, addCategory, editCategory, deleteCategory,
   listImages, addImage, deleteImage,
   listMetadata, setMetadata, deleteMetadataKey,
+  countChangeLogs, listChangeLogs, getChangeLog,
 } from "../core/operations/index.ts";
 import { closeDB } from "../core/data/index.ts";
 import { config } from "../core/config.ts";
-import type { Item, Category, Image, Metadata } from "../core/models/index.ts";
+import type { Item, Category, Image, Metadata, ChangeLog, ChangeType, TargetType } from "../core/models/index.ts";
 
 const rl = readline.createInterface({ input: stdin, output: stdout });
 
@@ -79,6 +80,21 @@ function printImages(images: Image[]) {
   }
 }
 
+function printChangeLogs(logs: ChangeLog[]) {
+  if (logs.length === 0) { info("No change log entries."); return; }
+  for (const log of logs) {
+    const typeColor = log.changeType === "create" ? c.green : log.changeType === "delete" ? c.red : c.yellow;
+    const targetLabel = `${c.cyan}${log.targetType}${c.reset} ${c.dim}${log.targetId.slice(0, 8)}…${c.reset}`;
+    const ts = new Date(log.timestamp).toLocaleString();
+    console.log(`  ${c.gray}${log.id.slice(0, 8)}…${c.reset}  ${typeColor}${log.changeType.padEnd(6)}${c.reset}  ${targetLabel}  ${c.dim}${ts}${c.reset}`);
+    if (log.changes && log.changes.length > 0) {
+      for (const ch of log.changes) {
+        console.log(`    ${c.dim}${ch.field}:${c.reset} ${c.red}${JSON.stringify(ch.from)}${c.reset} ${c.dim}→${c.reset} ${c.green}${JSON.stringify(ch.to)}${c.reset}`);
+      }
+    }
+  }
+}
+
 function printMetadata(entries: Metadata[]) {
   if (entries.length === 0) { info("No metadata."); return; }
   for (const { key, value } of entries) {
@@ -110,6 +126,9 @@ ${c.bold}Commands:${c.reset}
   ${c.cyan}/metadata${c.reset} list <itemId>                            List metadata for an item
   ${c.cyan}/metadata${c.reset} set <itemId> <key>=<value> ...           Set metadata key/value pairs
   ${c.cyan}/metadata${c.reset} delete <itemId> <key>                    Delete a metadata key
+
+  ${c.cyan}/changelog${c.reset} list [limit [offset]] [targetType=item|category] [changeType=create|update|delete] [targetId=<id>]
+  ${c.cyan}/changelog${c.reset} get <id>                               Show a single change log entry
 
   ${c.cyan}/mcp${c.reset} connect [url]                                Connect to MCP server
   ${c.cyan}/mcp${c.reset} disconnect                                   Disconnect from MCP server
@@ -331,6 +350,50 @@ function handleMetadata(action: string | undefined, rest: string[]) {
   }
 }
 
+function handleChangelog(action: string | undefined, rest: string[]) {
+  switch (action) {
+    case "list": {
+      const targetTypeArg = rest.find((a) => a.startsWith("targetType="));
+      const changeTypeArg = rest.find((a) => a.startsWith("changeType="));
+      const targetIdArg   = rest.find((a) => a.startsWith("targetId="));
+      const positional    = rest.filter((a) => !a.includes("="));
+      const [limitArg, offsetArg] = positional;
+      const limit  = limitArg  !== undefined ? parseInt(limitArg,  10) : undefined;
+      const offset = offsetArg !== undefined ? parseInt(offsetArg, 10) : undefined;
+      if (limit  !== undefined && (!Number.isInteger(limit)  || limit  < 1)) { err("limit must be a positive integer"); return; }
+      if (offset !== undefined && (!Number.isInteger(offset) || offset < 0)) { err("offset must be a non-negative integer"); return; }
+      const opts = {
+        targetType: targetTypeArg ? targetTypeArg.slice("targetType=".length) as TargetType : undefined,
+        changeType: changeTypeArg ? changeTypeArg.slice("changeType=".length) as ChangeType : undefined,
+        targetId:   targetIdArg   ? targetIdArg.slice("targetId=".length)                   : undefined,
+        limit,
+        offset,
+      };
+      const total = countChangeLogs(opts);
+      const logs  = listChangeLogs(opts);
+      printChangeLogs(logs);
+      if (limit !== undefined) {
+        info(`Showing ${logs.length} of ${total} entries (offset ${offset ?? 0})`);
+      } else {
+        info(`${total} entr${total === 1 ? "y" : "ies"} total`);
+      }
+      break;
+    }
+
+    case "get": {
+      const [id] = rest;
+      if (!id) { warn("Usage: /changelog get <id>"); return; }
+      const log = getChangeLog(id);
+      if (!log) { err("Change log entry not found."); return; }
+      printChangeLogs([log]);
+      break;
+    }
+
+    default:
+      warn("Unknown action. Try: list, get");
+  }
+}
+
 // --- MCP Client ---
 
 let mcpClient: Client | null = null;
@@ -470,6 +533,7 @@ async function main() {
         case "categories": await handleCategories(action, rest); break;
         case "images":     await handleImages(action, rest); break;
         case "metadata":   handleMetadata(action, rest); break;
+        case "changelog":  handleChangelog(action, rest); break;
         case "mcp":        await handleMcp(action, rest); break;
         case "auth":       handleAuth(action); break;
         case "help":       console.log(HELP); break;
