@@ -1,8 +1,8 @@
-import { FileItemRepository } from "./item-repository.ts";
-import { FileCategoryRepository } from "./category-repository.ts";
-import { FileImageRepository } from "./image-repository.ts";
-import { FileMetadataRepository } from "./metadata-repository.ts";
-import { FileChangeLogRepository } from "./changelog-repository.ts";
+import { FileItemRepository } from "./file-item-repository.ts";
+import { FileCategoryRepository } from "./file-category-repository.ts";
+import { FileImageRepository } from "./file-image-repository.ts";
+import { FileMetadataRepository } from "./file-metadata-repository.ts";
+import { FileChangeLogRepository } from "./file-changelog-repository.ts";
 
 export const items = new FileItemRepository();
 export const categories = new FileCategoryRepository();

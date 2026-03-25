@@ -1,8 +1,8 @@
-import { SqliteItemRepository } from "./item-repository.ts";
-import { SqliteCategoryRepository } from "./category-repository.ts";
-import { SqliteImageRepository } from "./image-repository.ts";
-import { SqliteMetadataRepository } from "./metadata-repository.ts";
-import { SqliteChangeLogRepository } from "./changelog-repository.ts";
+import { SqliteItemRepository } from "./sqlite-item-repository.ts";
+import { SqliteCategoryRepository } from "./sqlite-category-repository.ts";
+import { SqliteImageRepository } from "./sqlite-image-repository.ts";
+import { SqliteMetadataRepository } from "./sqlite-metadata-repository.ts";
+import { SqliteChangeLogRepository } from "./sqlite-changelog-repository.ts";
 
 export const items = new SqliteItemRepository();
 export const categories = new SqliteCategoryRepository();

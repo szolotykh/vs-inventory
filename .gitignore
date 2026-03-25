@@ -8,7 +8,7 @@ cert/
 db.json
 
 # file-based data store
-data/
+./data/
 *.sqlite
 *.sqlite-wal
 *.sqlite-shm
