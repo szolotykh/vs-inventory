@@ -1,3 +1,8 @@
+// -------------------------------------------------------
+// file-image-repository.ts
+// FileImageRepository — File-based (JSON) implementation of IImageRepository; stores metadata in JSON and binary files on disk.
+// -------------------------------------------------------
+
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { config } from "../../config.ts";

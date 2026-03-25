@@ -1,3 +1,8 @@
+// -------------------------------------------------------
+// file-category-repository.ts
+// FileCategoryRepository — File-based (JSON) implementation of ICategoryRepository.
+// -------------------------------------------------------
+
 import { readStore, modifyStore } from "./store.ts";
 import type { ICategoryRepository } from "../types.ts";
 import type { Category } from "../../models/index.ts";

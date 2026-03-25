@@ -1,4 +1,8 @@
-// core/data/memory/metadata-repository.ts — In-memory implementation of IMetadataRepository (used by tests).
+// -------------------------------------------------------
+// memory-metadata-repository.ts
+// MemoryMetadataRepository — In-memory implementation of IMetadataRepository (used by tests).
+// -------------------------------------------------------
+
 import type { IMetadataRepository } from "../types.ts";
 import type { Metadata } from "../../models/index.ts";
 

@@ -1,3 +1,8 @@
+// -------------------------------------------------------
+// file-item-repository.ts
+// FileItemRepository — File-based (JSON) implementation of IItemRepository with OData filter support.
+// -------------------------------------------------------
+
 import { readStore, modifyStore } from "./store.ts";
 import type { IItemRepository } from "../types.ts";
 import type { Item } from "../../models/index.ts";

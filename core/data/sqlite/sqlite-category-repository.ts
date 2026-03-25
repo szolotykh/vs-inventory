@@ -1,3 +1,8 @@
+// -------------------------------------------------------
+// sqlite-category-repository.ts
+// SqliteCategoryRepository — SQLite implementation of ICategoryRepository.
+// -------------------------------------------------------
+
 import { getDB } from "./db.ts";
 import type { ICategoryRepository } from "../types.ts";
 import type { Category } from "../../models/index.ts";

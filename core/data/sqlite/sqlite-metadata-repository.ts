@@ -1,3 +1,8 @@
+// -------------------------------------------------------
+// sqlite-metadata-repository.ts
+// SqliteMetadataRepository — SQLite implementation of IMetadataRepository.
+// -------------------------------------------------------
+
 import { getDB } from "./db.ts";
 import type { IMetadataRepository } from "../types.ts";
 import type { Metadata } from "../../models/index.ts";

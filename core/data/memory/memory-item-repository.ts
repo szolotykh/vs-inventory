@@ -1,4 +1,8 @@
-// core/data/memory/item-repository.ts — In-memory implementation of IItemRepository (used by tests).
+// -------------------------------------------------------
+// memory-item-repository.ts
+// MemoryItemRepository — In-memory implementation of IItemRepository (used by tests).
+// -------------------------------------------------------
+
 import type { IItemRepository } from "../types.ts";
 import type { Item } from "../../models/index.ts";
 import { parseODataFilter, evaluateFilter } from "../odata.ts";

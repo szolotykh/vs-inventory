@@ -1,4 +1,8 @@
-// core/data/sqlite/changelog-repository.ts — SQLite implementation of IChangeLogRepository.
+// -------------------------------------------------------
+// sqlite-changelog-repository.ts
+// SqliteChangeLogRepository — SQLite implementation of IChangeLogRepository.
+// -------------------------------------------------------
+
 import { getDB } from "./db.ts";
 import type { IChangeLogRepository } from "../types.ts";
 import type { ChangeLog, ChangeType, TargetType } from "../../models/index.ts";

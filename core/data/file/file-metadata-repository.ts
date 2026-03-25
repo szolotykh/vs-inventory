@@ -1,3 +1,8 @@
+// -------------------------------------------------------
+// file-metadata-repository.ts
+// FileMetadataRepository — File-based (JSON) implementation of IMetadataRepository.
+// -------------------------------------------------------
+
 import { readStore, modifyStore } from "./store.ts";
 import type { IMetadataRepository } from "../types.ts";
 import type { Metadata } from "../../models/index.ts";

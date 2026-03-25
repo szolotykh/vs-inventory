@@ -1,4 +1,8 @@
-// core/data/memory/changelog-repository.ts — In-memory implementation of IChangeLogRepository (used by tests).
+// -------------------------------------------------------
+// memory-changelog-repository.ts
+// MemoryChangeLogRepository — In-memory implementation of IChangeLogRepository (used by tests).
+// -------------------------------------------------------
+
 import type { IChangeLogRepository } from "../types.ts";
 import type { ChangeLog, ChangeType, TargetType } from "../../models/index.ts";
 

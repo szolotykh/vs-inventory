@@ -1,3 +1,8 @@
+// -------------------------------------------------------
+// sqlite-item-repository.ts
+// SqliteItemRepository — SQLite implementation of IItemRepository with OData filter support.
+// -------------------------------------------------------
+
 import { getDB } from "./db.ts";
 import type { IItemRepository } from "../types.ts";
 import type { Item } from "../../models/index.ts";

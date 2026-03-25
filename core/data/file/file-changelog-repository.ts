@@ -1,4 +1,8 @@
-// core/data/file/changelog-repository.ts — File-based (JSON) implementation of IChangeLogRepository.
+// -------------------------------------------------------
+// file-changelog-repository.ts
+// FileChangeLogRepository — File-based (JSON) implementation of IChangeLogRepository.
+// -------------------------------------------------------
+
 import { readStore, modifyStore } from "./store.ts";
 import type { IChangeLogRepository } from "../types.ts";
 import type { ChangeLog, ChangeType, TargetType } from "../../models/index.ts";

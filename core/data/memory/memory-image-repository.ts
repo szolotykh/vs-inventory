@@ -1,4 +1,8 @@
-// core/data/memory/image-repository.ts — In-memory implementation of IImageRepository (used by tests).
+// -------------------------------------------------------
+// memory-image-repository.ts
+// MemoryImageRepository — In-memory implementation of IImageRepository (used by tests).
+// -------------------------------------------------------
+
 import type { IImageRepository } from "../types.ts";
 import type { Image } from "../../models/index.ts";
 

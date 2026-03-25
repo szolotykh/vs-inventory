@@ -208,6 +208,36 @@ Tests live in `tests/`. The shared setup (`tests/setup.ts`) is preloaded via `bu
 
 Test helpers (`get`, `post`, `put`, `del`) wrap `fetch` calls against a live server on a random port (`createServer(0)`).
 
+## File Naming Conventions
+
+Repository files are named after the class they contain, converted to kebab-case. The prefix matches the implementation type:
+
+| Directory       | Prefix    | Example                          | Class                        |
+|-----------------|-----------|----------------------------------|------------------------------|
+| `data/sqlite/`  | `sqlite-` | `sqlite-item-repository.ts`      | `SqliteItemRepository`       |
+| `data/file/`    | `file-`   | `file-category-repository.ts`    | `FileCategoryRepository`     |
+| `data/memory/`  | `memory-` | `memory-changelog-repository.ts` | `MemoryChangeLogRepository`  |
+
+When adding a new repository class, derive the file name from the class name — do not use a generic name like `item-repository.ts`.
+
+## File Headers
+
+Every repository file must start with a divider header block followed by a blank line:
+
+```ts
+// -------------------------------------------------------
+// <filename>.ts
+// <ClassName> — <one-line description of what the class does>
+// -------------------------------------------------------
+
+import ...
+```
+
+- The divider is exactly 55 dashes: `// -------------------------------------------------------`
+- Line 2 is the file name (basename only, no path)
+- Line 3 is the class name followed by an em dash and a concise description
+- A blank line separates the header from the first import
+
 ## TypeScript Notes
 
 - Module resolution is set to `"bundler"` — import `.ts` extensions are allowed

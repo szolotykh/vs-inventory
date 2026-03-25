@@ -1,4 +1,8 @@
-// core/data/memory/category-repository.ts — In-memory implementation of ICategoryRepository (used by tests).
+// -------------------------------------------------------
+// memory-category-repository.ts
+// MemoryCategoryRepository — In-memory implementation of ICategoryRepository (used by tests).
+// -------------------------------------------------------
+
 import type { ICategoryRepository } from "../types.ts";
 import type { Category } from "../../models/index.ts";
 

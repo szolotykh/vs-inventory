@@ -1,3 +1,8 @@
+// -------------------------------------------------------
+// sqlite-image-repository.ts
+// SqliteImageRepository — SQLite implementation of IImageRepository; stores metadata in the DB and binary files on disk.
+// -------------------------------------------------------
+
 import { mkdir, rm, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { config } from "../../config.ts";
