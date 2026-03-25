@@ -1,16 +1,20 @@
 import { categories, items, changelog } from "../data/index.ts";
+import { validate } from "../validators/index.ts";
+import { categorySchema } from "../models/category.ts";
 
 export function listCategories() {
   return categories.list();
 }
 
 export async function addCategory(data: { name: string }) {
+  validate(categorySchema, data as Record<string, unknown>);
   const category = await categories.add(data);
   changelog.add({ targetId: category.id, targetType: "category", changeType: "create", changes: null });
   return category;
 }
 
 export async function editCategory(id: string, data: { name: string }) {
+  validate(categorySchema, data as Record<string, unknown>);
   const before = await categories.get(id);
   const after = await categories.edit(id, data);
   if (!after) return null;

@@ -6,6 +6,7 @@ import {
   countChangeLogs, listChangeLogs, getChangeLog,
 } from "../core/operations/index.ts";
 import type { Metadata, ChangeType, TargetType } from "../core/models/index.ts";
+import { ValidationError } from "../core/validators/index.ts";
 import { config } from "../core/config.ts";
 
 function checkAuth(req: Request): Response | null {
@@ -219,7 +220,10 @@ async function handler(req: Request): Promise<Response> {
     }
 
     return new Response("Not Found", { status: 404 });
-  } catch {
+  } catch (err) {
+    if (err instanceof ValidationError) {
+      return Response.json({ error: "Validation failed", failures: err.failures }, { status: 400 });
+    }
     return new Response("Bad Request", { status: 400 });
   }
 }

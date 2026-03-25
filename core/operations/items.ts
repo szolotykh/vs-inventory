@@ -1,5 +1,7 @@
 import { items, images, metadata, changelog } from "../data/index.ts";
 import type { Item, ChangeEntry } from "../models/index.ts";
+import { validate } from "../validators/index.ts";
+import { itemCreateSchema, itemUpdateSchema } from "../models/item.ts";
 
 function computeItemDiff(before: Item, after: Item): ChangeEntry[] {
   const changes: ChangeEntry[] = [];
@@ -25,12 +27,14 @@ export function getItem(id: string) {
 }
 
 export async function addItem(data: { name: string; description: string; count: number; categoryId?: string }) {
+  validate(itemCreateSchema, data as Record<string, unknown>);
   const item = await items.add(data);
   changelog.add({ targetId: item.id, targetType: "item", changeType: "create", changes: null });
   return item;
 }
 
 export async function editItem(id: string, data: { name?: string; description?: string; count?: number; categoryId?: string | null }) {
+  validate(itemUpdateSchema, data as Record<string, unknown>);
   const before = items.get(id);
   const after = await items.edit(id, data);
   if (!after) return null;
