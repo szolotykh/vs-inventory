@@ -7,7 +7,7 @@ export interface IItemRepository {
   add(data: { name: string; description: string; count: number; categoryId?: string }): Promise<Item>;
   edit(id: string, data: { name?: string; description?: string; count?: number; categoryId?: string | null }): Promise<Item | null>;
   delete(id: string): Promise<boolean>;
-  unlinkCategory(categoryId: string): void;
+  unlinkCategory(categoryId: string): Promise<void>;
 }
 
 export interface ICategoryRepository {
@@ -29,14 +29,14 @@ export interface IImageRepository {
 
 export interface IMetadataRepository {
   list(itemId: string): Metadata[];
-  set(itemId: string, entries: Metadata[]): Metadata[];
-  deleteKey(itemId: string, key: string): boolean;
-  deleteByItemId(itemId: string): void;
+  set(itemId: string, entries: Metadata[]): Promise<Metadata[]>;
+  deleteKey(itemId: string, key: string): Promise<boolean>;
+  deleteByItemId(itemId: string): Promise<void>;
 }
 
 export interface IChangeLogRepository {
   count(opts?: { targetType?: TargetType; targetId?: string; changeType?: ChangeType }): number;
   list(opts?: { targetType?: TargetType; targetId?: string; changeType?: ChangeType; limit?: number; offset?: number }): ChangeLog[];
   get(id: string): ChangeLog | null;
-  add(data: Omit<ChangeLog, "id" | "timestamp">): ChangeLog;
+  add(data: Omit<ChangeLog, "id" | "timestamp">): Promise<ChangeLog>;
 }

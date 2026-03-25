@@ -9,7 +9,7 @@ export function listCategories() {
 export async function addCategory(data: { name: string }) {
   validate(categorySchema, data as Record<string, unknown>);
   const category = await categories.add(data);
-  changelog.add({ targetId: category.id, targetType: "category", changeType: "create", changes: null });
+  await changelog.add({ targetId: category.id, targetType: "category", changeType: "create", changes: null });
   return category;
 }
 
@@ -21,15 +21,15 @@ export async function editCategory(id: string, data: { name: string }) {
   const changes = before && before.name !== after.name
     ? [{ field: "name", from: before.name, to: after.name }]
     : [];
-  changelog.add({ targetId: id, targetType: "category", changeType: "update", changes });
+  await changelog.add({ targetId: id, targetType: "category", changeType: "update", changes });
   return after;
 }
 
 export async function deleteCategory(id: string): Promise<boolean> {
   const existing = await categories.get(id);
   if (!existing) return false;
-  items.unlinkCategory(id);
+  await items.unlinkCategory(id);
   await categories.delete(id);
-  changelog.add({ targetId: id, targetType: "category", changeType: "delete", changes: null });
+  await changelog.add({ targetId: id, targetType: "category", changeType: "delete", changes: null });
   return true;
 }

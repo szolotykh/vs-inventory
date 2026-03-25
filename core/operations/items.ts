@@ -29,7 +29,7 @@ export function getItem(id: string) {
 export async function addItem(data: { name: string; description: string; count: number; categoryId?: string }) {
   validate(itemCreateSchema, data as Record<string, unknown>);
   const item = await items.add(data);
-  changelog.add({ targetId: item.id, targetType: "item", changeType: "create", changes: null });
+  await changelog.add({ targetId: item.id, targetType: "item", changeType: "create", changes: null });
   return item;
 }
 
@@ -39,15 +39,15 @@ export async function editItem(id: string, data: { name?: string; description?: 
   const after = await items.edit(id, data);
   if (!after) return null;
   const changes = computeItemDiff(before!, after);
-  changelog.add({ targetId: id, targetType: "item", changeType: "update", changes });
+  await changelog.add({ targetId: id, targetType: "item", changeType: "update", changes });
   return after;
 }
 
 export async function deleteItem(id: string): Promise<boolean> {
   const deleted = await items.delete(id);
   if (!deleted) return false;
-  changelog.add({ targetId: id, targetType: "item", changeType: "delete", changes: null });
+  await changelog.add({ targetId: id, targetType: "item", changeType: "delete", changes: null });
   await images.deleteByItemId(id);
-  metadata.deleteByItemId(id);
+  await metadata.deleteByItemId(id);
   return true;
 }

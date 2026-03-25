@@ -109,7 +109,7 @@ async function handler(req: Request): Promise<Response> {
         // /items/:id/metadata/:key
         if (seg3) {
           if (req.method === "DELETE") {
-            const deleted = deleteMetadataKey(id, seg3);
+            const deleted = await deleteMetadataKey(id, seg3);
             if (!deleted) return new Response("Not Found", { status: 404 });
             return new Response(null, { status: 204 });
           }
@@ -122,7 +122,7 @@ async function handler(req: Request): Promise<Response> {
         }
         if (req.method === "PUT") {
           const body = await req.json() as Metadata[];
-          const result = setMetadata(id, body);
+          const result = await setMetadata(id, body);
           return Response.json(result);
         }
         return new Response("Method Not Allowed", { status: 405 });

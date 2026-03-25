@@ -8,7 +8,7 @@ export class SqliteMetadataRepository implements IMetadataRepository {
   }
 
   /** Replace all metadata for an item with the given key/value pairs */
-  set(itemId: string, entries: Metadata[]): Metadata[] {
+  async set(itemId: string, entries: Metadata[]): Promise<Metadata[]> {
     const db = getDB();
     db.run("DELETE FROM metadata WHERE itemId = ?", [itemId]);
     const stmt = db.prepare("INSERT INTO metadata (itemId, key, value) VALUES (?, ?, ?)");
@@ -18,12 +18,12 @@ export class SqliteMetadataRepository implements IMetadataRepository {
     return entries;
   }
 
-  deleteKey(itemId: string, key: string): boolean {
+  async deleteKey(itemId: string, key: string): Promise<boolean> {
     const result = getDB().run("DELETE FROM metadata WHERE itemId = ? AND key = ?", [itemId, key]);
     return result.changes > 0;
   }
 
-  deleteByItemId(itemId: string): void {
+  async deleteByItemId(itemId: string): Promise<void> {
     getDB().run("DELETE FROM metadata WHERE itemId = ?", [itemId]);
   }
 }

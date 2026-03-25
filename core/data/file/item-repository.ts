@@ -1,4 +1,4 @@
-import { readStore, writeStore } from "./store.ts";
+import { readStore, modifyStore } from "./store.ts";
 import type { IItemRepository } from "../types.ts";
 import type { Item } from "../../models/index.ts";
 import { parseODataFilter, evaluateFilter } from "../odata.ts";
@@ -28,55 +28,59 @@ export class FileItemRepository implements IItemRepository {
   }
 
   async add(data: { name: string; description: string; count: number; categoryId?: string }): Promise<Item> {
-    const items = readStore<Item>("items");
-    const item: Item = { id: crypto.randomUUID(), name: data.name, description: data.description, count: data.count };
-    if (data.categoryId !== undefined) item.categoryId = data.categoryId;
-    items.push(item);
-    writeStore("items", items);
+    let item!: Item;
+    await modifyStore<Item>("items", (items) => {
+      item = { id: crypto.randomUUID(), name: data.name, description: data.description, count: data.count };
+      if (data.categoryId !== undefined) item.categoryId = data.categoryId;
+      return [...items, item];
+    });
     return item;
   }
 
   async edit(id: string, data: { name?: string; description?: string; count?: number; categoryId?: string | null }): Promise<Item | null> {
-    const items = readStore<Item>("items");
-    const idx = items.findIndex((i) => i.id === id);
-    if (idx === -1) return null;
-    const existing = items[idx]!;
-    const updated: Item = {
-      id: existing.id,
-      name: data.name ?? existing.name,
-      description: data.description ?? existing.description,
-      count: data.count ?? existing.count,
-    };
-    if (data.categoryId === null) {
-      // omit categoryId — removes it
-    } else if (data.categoryId !== undefined) {
-      updated.categoryId = data.categoryId;
-    } else if (existing.categoryId !== undefined) {
-      updated.categoryId = existing.categoryId;
-    }
-    items[idx] = updated;
-    writeStore("items", items);
+    let updated: Item | null = null;
+    await modifyStore<Item>("items", (items) => {
+      const idx = items.findIndex((i) => i.id === id);
+      if (idx === -1) return items;
+      const existing = items[idx]!;
+      updated = {
+        id: existing.id,
+        name: data.name ?? existing.name,
+        description: data.description ?? existing.description,
+        count: data.count ?? existing.count,
+      };
+      if (data.categoryId === null) {
+        // omit categoryId — removes it
+      } else if (data.categoryId !== undefined) {
+        updated.categoryId = data.categoryId;
+      } else if (existing.categoryId !== undefined) {
+        updated.categoryId = existing.categoryId;
+      }
+      return items.map((i, n) => (n === idx ? updated! : i));
+    });
     return updated;
   }
 
   async delete(id: string): Promise<boolean> {
-    const items = readStore<Item>("items");
-    const idx = items.findIndex((i) => i.id === id);
-    if (idx === -1) return false;
-    items.splice(idx, 1);
-    writeStore("items", items);
-    return true;
+    let found = false;
+    await modifyStore<Item>("items", (items) => {
+      const idx = items.findIndex((i) => i.id === id);
+      if (idx === -1) return items;
+      found = true;
+      return items.filter((_, n) => n !== idx);
+    });
+    return found;
   }
 
-  unlinkCategory(categoryId: string): void {
-    const items = readStore<Item>("items");
-    let changed = false;
-    for (const item of items) {
-      if (item.categoryId === categoryId) {
-        delete item.categoryId;
-        changed = true;
-      }
-    }
-    if (changed) writeStore("items", items);
+  async unlinkCategory(categoryId: string): Promise<void> {
+    await modifyStore<Item>("items", (items) => {
+      const needsUpdate = items.some((i) => i.categoryId === categoryId);
+      if (!needsUpdate) return items;
+      return items.map((i) => {
+        if (i.categoryId !== categoryId) return i;
+        const { categoryId: _removed, ...rest } = i;
+        return rest as Item;
+      });
+    });
   }
 }

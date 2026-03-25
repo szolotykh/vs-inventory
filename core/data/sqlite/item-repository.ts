@@ -82,7 +82,7 @@ export class SqliteItemRepository implements IItemRepository {
     return result.changes > 0;
   }
 
-  unlinkCategory(categoryId: string): void {
+  async unlinkCategory(categoryId: string): Promise<void> {
     getDB().run("UPDATE items SET categoryId = NULL WHERE categoryId = ?", [categoryId]);
   }
 }

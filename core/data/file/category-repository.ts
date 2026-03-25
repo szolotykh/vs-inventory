@@ -1,4 +1,4 @@
-import { readStore, writeStore } from "./store.ts";
+import { readStore, modifyStore } from "./store.ts";
 import type { ICategoryRepository } from "../types.ts";
 import type { Category } from "../../models/index.ts";
 
@@ -12,28 +12,33 @@ export class FileCategoryRepository implements ICategoryRepository {
   }
 
   async add(data: { name: string }): Promise<Category> {
-    const cats = readStore<Category>("categories");
-    const cat: Category = { id: crypto.randomUUID(), name: data.name };
-    cats.push(cat);
-    writeStore("categories", cats);
+    let cat!: Category;
+    await modifyStore<Category>("categories", (cats) => {
+      cat = { id: crypto.randomUUID(), name: data.name };
+      return [...cats, cat];
+    });
     return cat;
   }
 
   async edit(id: string, data: { name: string }): Promise<Category | null> {
-    const cats = readStore<Category>("categories");
-    const idx = cats.findIndex((c) => c.id === id);
-    if (idx === -1) return null;
-    cats[idx]!.name = data.name;
-    writeStore("categories", cats);
-    return { id, name: data.name };
+    let found = false;
+    await modifyStore<Category>("categories", (cats) => {
+      const idx = cats.findIndex((c) => c.id === id);
+      if (idx === -1) return cats;
+      found = true;
+      return cats.map((c, n) => (n === idx ? { id, name: data.name } : c));
+    });
+    return found ? { id, name: data.name } : null;
   }
 
   async delete(id: string): Promise<boolean> {
-    const cats = readStore<Category>("categories");
-    const idx = cats.findIndex((c) => c.id === id);
-    if (idx === -1) return false;
-    cats.splice(idx, 1);
-    writeStore("categories", cats);
-    return true;
+    let found = false;
+    await modifyStore<Category>("categories", (cats) => {
+      const idx = cats.findIndex((c) => c.id === id);
+      if (idx === -1) return cats;
+      found = true;
+      return cats.filter((_, n) => n !== idx);
+    });
+    return found;
   }
 }
