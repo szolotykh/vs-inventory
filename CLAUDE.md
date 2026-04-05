@@ -143,7 +143,7 @@ All write operations (add/edit/delete on items and categories) automatically rec
 
 | Tool | Description |
 |------|-------------|
-| `list_items` | List/filter inventory items with pagination and OData `$filter` |
+| `list_items` | List/filter inventory items with pagination and OData `filter` parameter |
 | `get_item` | Get a single item by ID |
 | `create_item` | Create a new item |
 | `update_item` | Update an existing item |
